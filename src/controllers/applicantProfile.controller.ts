@@ -10,6 +10,128 @@ interface MulterRequest extends Request {
     };
 }
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     ApplicantProfile:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           format: uuid
+ *           description: Profile ID
+ *         userId:
+ *           type: string
+ *           format: uuid
+ *           description: User ID
+ *         nik:
+ *           type: string
+ *           description: National ID number
+ *         npwp:
+ *           type: string
+ *           description: Tax ID number
+ *         email:
+ *           type: string
+ *           format: email
+ *           description: Email address
+ *         namaPemohon:
+ *           type: string
+ *           description: Applicant name
+ *         telepon:
+ *           type: string
+ *           description: Phone number
+ *         alamatPemohon:
+ *           type: string
+ *           description: Applicant address
+ *         fotoPemohon:
+ *           type: string
+ *           description: Applicant photo URL
+ *         alamatPerusahaan:
+ *           type: string
+ *           description: Company address
+ *         lokasiPerbenihan:
+ *           type: string
+ *           description: Seed location
+ *         nikKuasa:
+ *           type: string
+ *           description: Attorney NIK
+ *         namaKuasa:
+ *           type: string
+ *           description: Attorney name
+ *         fotoKuasa:
+ *           type: string
+ *           description: Attorney photo URL
+ *         fileAktaPendirian:
+ *           type: string
+ *           description: Company incorporation document URL
+ *         fileKtp:
+ *           type: string
+ *           description: ID card file URL
+ *         fileNpwp:
+ *           type: string
+ *           description: Tax ID file URL
+ *         fileSuratKuasa:
+ *           type: string
+ *           description: Power of attorney document URL
+ *         statusKepemilikan:
+ *           type: string
+ *           enum: [Milik Sendiri, Sewa, Bagi Hasil]
+ *           description: Ownership status
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *       required:
+ *         - nik
+ *         - email
+ *         - namaPemohon
+ *     ApplicantProfileInput:
+ *       type: object
+ *       properties:
+ *         nik:
+ *           type: string
+ *           description: National ID number
+ *         npwp:
+ *           type: string
+ *           description: Tax ID number
+ *         email:
+ *           type: string
+ *           format: email
+ *           description: Email address
+ *         namaPemohon:
+ *           type: string
+ *           description: Applicant name
+ *         telepon:
+ *           type: string
+ *           description: Phone number
+ *         alamatPemohon:
+ *           type: string
+ *           description: Applicant address
+ *         alamatPerusahaan:
+ *           type: string
+ *           description: Company address
+ *         lokasiPerbenihan:
+ *           type: string
+ *           description: Seed location
+ *         nikKuasa:
+ *           type: string
+ *           description: Attorney NIK
+ *         namaKuasa:
+ *           type: string
+ *           description: Attorney name
+ *         statusKepemilikan:
+ *           type: string
+ *           enum: [Milik Sendiri, Sewa, Bagi Hasil]
+ *           description: Ownership status
+ *       required:
+ *         - nik
+ *         - email
+ *         - namaPemohon
+ */
+
 export class ApplicantProfileController {
     private profileApplicantService: ProfileApplicantService;
 
@@ -17,6 +139,33 @@ export class ApplicantProfileController {
         this.profileApplicantService = new ProfileApplicantService();
     }
 
+    /**
+     * @swagger
+     * /api/applicant-profiles/my-profile:
+     *   get:
+     *     summary: Get current user's applicant profile
+     *     tags: [Profile]
+     *     security:
+     *       - bearerAuth: []
+     *     responses:
+     *       200:
+     *         description: Applicant profile retrieved successfully
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *               properties:
+     *                 success:
+     *                   type: boolean
+     *                 data:
+     *                   $ref: '#/components/schemas/ApplicantProfile'
+     *       401:
+     *         description: User not authenticated
+     *       404:
+     *         description: Applicant profile not found
+     *       500:
+     *         description: Internal server error
+     */
     // Get current user's applicant profile
     async getMyProfile(req: Request, res: Response): Promise<void> {
         try {
@@ -45,6 +194,41 @@ export class ApplicantProfileController {
         }
     }
 
+    /**
+     * @swagger
+     * /api/applicant-profiles/my-profile:
+     *   post:
+     *     summary: Create applicant profile for current user
+     *     tags: [Profile]
+     *     security:
+     *       - bearerAuth: []
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             $ref: '#/components/schemas/ApplicantProfileInput'
+     *     responses:
+     *       201:
+     *         description: Applicant profile created successfully
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *               properties:
+     *                 success:
+     *                   type: boolean
+     *                 message:
+     *                   type: string
+     *                 data:
+     *                   $ref: '#/components/schemas/ApplicantProfile'
+     *       400:
+     *         description: Validation error
+     *       401:
+     *         description: User not authenticated
+     *       500:
+     *         description: Internal server error
+     */
     // Create applicant profile for current user
     async createMyProfile(req: Request, res: Response): Promise<void> {
         try {
@@ -102,6 +286,55 @@ export class ApplicantProfileController {
         }
     }
 
+    /**
+     * @swagger
+     * /api/applicant-profiles/my-profile/upload-document:
+     *   post:
+     *     summary: Upload document for current user's applicant profile
+     *     tags: [Profile]
+     *     security:
+     *       - bearerAuth: []
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         multipart/form-data:
+     *           schema:
+     *             type: object
+     *             properties:
+     *               documentType:
+     *                 type: string
+     *                 enum: [foto_pemohon, foto_kuasa, file_akta_pendirian, file_ktp, file_npwp, file_surat_kuasa]
+     *                 description: Type of document to upload
+     *               file:
+     *                 type: string
+     *                 format: binary
+     *                 description: Document file to upload
+     *             required:
+     *               - documentType
+     *               - file
+     *     responses:
+     *       200:
+     *         description: Document uploaded successfully
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *               properties:
+     *                 success:
+     *                   type: boolean
+     *                 message:
+     *                   type: string
+     *                 data:
+     *                   $ref: '#/components/schemas/ApplicantProfile'
+     *       400:
+     *         description: Validation error
+     *       401:
+     *         description: User not authenticated
+     *       404:
+     *         description: Applicant profile not found
+     *       500:
+     *         description: Internal server error
+     */
     // Upload document for current user's applicant profile
     async uploadDocument(req: MulterRequest, res: Response): Promise<void> {
         try {
@@ -171,6 +404,37 @@ export class ApplicantProfileController {
         }
     }
 
+    /**
+     * @swagger
+     * /api/applicant-profiles/all:
+     *   get:
+     *     summary: Get all applicant profiles (Admin only)
+     *     tags: [Profile]
+     *     security:
+     *       - bearerAuth: []
+     *     responses:
+     *       200:
+     *         description: Applicant profiles retrieved successfully
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *               properties:
+     *                 success:
+     *                   type: boolean
+     *                 data:
+     *                   type: array
+     *                   items:
+     *                     $ref: '#/components/schemas/ApplicantProfile'
+     *                 total:
+     *                   type: number
+     *       401:
+     *         description: User not authenticated
+     *       403:
+     *         description: Access denied
+     *       500:
+     *         description: Internal server error
+     */
     // Admin: Get all applicant profiles
     async getAllProfiles(req: Request, res: Response): Promise<void> {
         try {
@@ -216,6 +480,37 @@ export class ApplicantProfileController {
         }
     }
 
+    /**
+     * @swagger
+     * /api/applicant-profiles/petani:
+     *   get:
+     *     summary: Get all Petani profiles (Admin only)
+     *     tags: [Profile]
+     *     security:
+     *       - bearerAuth: []
+     *     responses:
+     *       200:
+     *         description: Petani profiles retrieved successfully
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *               properties:
+     *                 success:
+     *                   type: boolean
+     *                 data:
+     *                   type: array
+     *                   items:
+     *                     $ref: '#/components/schemas/ApplicantProfile'
+     *                 total:
+     *                   type: number
+     *       401:
+     *         description: User not authenticated
+     *       403:
+     *         description: Access denied
+     *       500:
+     *         description: Internal server error
+     */
     // Admin: Get Petani profiles
     async getPetaniProfiles(req: Request, res: Response): Promise<void> {
         try {
@@ -235,6 +530,37 @@ export class ApplicantProfileController {
         }
     }
 
+    /**
+     * @swagger
+     * /api/applicant-profiles/perusahaan:
+     *   get:
+     *     summary: Get all Perusahaan profiles (Admin only)
+     *     tags: [Profile]
+     *     security:
+     *       - bearerAuth: []
+     *     responses:
+     *       200:
+     *         description: Perusahaan profiles retrieved successfully
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *               properties:
+     *                 success:
+     *                   type: boolean
+     *                 data:
+     *                   type: array
+     *                   items:
+     *                     $ref: '#/components/schemas/ApplicantProfile'
+     *                 total:
+     *                   type: number
+     *       401:
+     *         description: User not authenticated
+     *       403:
+     *         description: Access denied
+     *       500:
+     *         description: Internal server error
+     */
     // Admin: Get Perusahaan profiles
     async getPerusahaanProfiles(req: Request, res: Response): Promise<void> {
         try {

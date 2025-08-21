@@ -56,6 +56,14 @@ const getSwaggerOptions = async () => {
                 {
                     name: 'Profile',
                     description: 'User profile management operations'
+                },
+                {
+                    name: 'Internal Profiles',
+                    description: 'Internal user profile management for employees'
+                },
+                {
+                    name: 'Applicant Profiles',
+                    description: 'External applicant profile management for Petani and Perusahaan'
                 }
             ],
             components: {

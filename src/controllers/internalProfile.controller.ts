@@ -1,6 +1,92 @@
 import { Request, Response } from 'express';
 import { ProfileService } from '../services/profile.service';
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     InternalProfile:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           format: uuid
+ *           description: Profile ID
+ *         userId:
+ *           type: string
+ *           format: uuid
+ *           description: User ID
+ *         nip:
+ *           type: string
+ *           description: Employee ID number
+ *         nik:
+ *           type: string
+ *           description: National ID number
+ *         nama:
+ *           type: string
+ *           description: Full name
+ *         jabatan:
+ *           type: string
+ *           description: Job position
+ *         telepon:
+ *           type: string
+ *           description: Phone number
+ *         alamat:
+ *           type: string
+ *           description: Address
+ *         golongan:
+ *           type: string
+ *           description: Employee grade
+ *         pangkat:
+ *           type: string
+ *           description: Employee rank
+ *         fotoUrl:
+ *           type: string
+ *           description: Profile photo URL
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *       required:
+ *         - nik
+ *         - nama
+ *     InternalProfileInput:
+ *       type: object
+ *       properties:
+ *         nip:
+ *           type: string
+ *           description: Employee ID number
+ *         nik:
+ *           type: string
+ *           description: National ID number
+ *         nama:
+ *           type: string
+ *           description: Full name
+ *         jabatan:
+ *           type: string
+ *           description: Job position
+ *         telepon:
+ *           type: string
+ *           description: Phone number
+ *         alamat:
+ *           type: string
+ *           description: Address
+ *         golongan:
+ *           type: string
+ *           description: Employee grade
+ *         pangkat:
+ *           type: string
+ *           description: Employee rank
+ *         fotoUrl:
+ *           type: string
+ *           description: Profile photo URL
+ *       required:
+ *         - nik
+ *         - nama
+ */
+
 export class InternalProfileController {
     private profileService: ProfileService;
 
@@ -8,6 +94,33 @@ export class InternalProfileController {
         this.profileService = new ProfileService();
     }
 
+    /**
+     * @swagger
+     * /api/internal-profiles/my-profile:
+     *   get:
+     *     summary: Get current user's internal profile
+     *     tags: [Profile]
+     *     security:
+     *       - bearerAuth: []
+     *     responses:
+     *       200:
+     *         description: Internal profile retrieved successfully
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *               properties:
+     *                 success:
+     *                   type: boolean
+     *                 data:
+     *                   $ref: '#/components/schemas/InternalProfile'
+     *       401:
+     *         description: User not authenticated
+     *       404:
+     *         description: Internal profile not found
+     *       500:
+     *         description: Internal server error
+     */
     // Get current user's internal profile
     async getMyProfile(req: Request, res: Response): Promise<void> {
         try {
@@ -36,6 +149,41 @@ export class InternalProfileController {
         }
     }
 
+    /**
+     * @swagger
+     * /api/internal-profiles/my-profile:
+     *   post:
+     *     summary: Create internal profile for current user
+     *     tags: [Profile]
+     *     security:
+     *       - bearerAuth: []
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             $ref: '#/components/schemas/InternalProfileInput'
+     *     responses:
+     *       201:
+     *         description: Internal profile created successfully
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *               properties:
+     *                 success:
+     *                   type: boolean
+     *                 message:
+     *                   type: string
+     *                 data:
+     *                   $ref: '#/components/schemas/InternalProfile'
+     *       400:
+     *         description: Validation error
+     *       401:
+     *         description: User not authenticated
+     *       500:
+     *         description: Internal server error
+     */
     // Create internal profile for current user
     async createMyProfile(req: Request, res: Response): Promise<void> {
         try {
@@ -65,6 +213,43 @@ export class InternalProfileController {
         }
     }
 
+    /**
+     * @swagger
+     * /api/internal-profiles/my-profile:
+     *   put:
+     *     summary: Update current user's internal profile
+     *     tags: [Profile]
+     *     security:
+     *       - bearerAuth: []
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             $ref: '#/components/schemas/InternalProfileInput'
+     *     responses:
+     *       200:
+     *         description: Internal profile updated successfully
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *               properties:
+     *                 success:
+     *                   type: boolean
+     *                 message:
+     *                   type: string
+     *                 data:
+     *                   $ref: '#/components/schemas/InternalProfile'
+     *       400:
+     *         description: Validation error
+     *       401:
+     *         description: User not authenticated
+     *       404:
+     *         description: Internal profile not found
+     *       500:
+     *         description: Internal server error
+     */
     // Update current user's internal profile
     async updateMyProfile(req: Request, res: Response): Promise<void> {
         try {
@@ -93,6 +278,33 @@ export class InternalProfileController {
         }
     }
 
+    /**
+     * @swagger
+     * /api/internal-profiles/my-profile:
+     *   delete:
+     *     summary: Delete current user's internal profile
+     *     tags: [Profile]
+     *     security:
+     *       - bearerAuth: []
+     *     responses:
+     *       200:
+     *         description: Internal profile deleted successfully
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *               properties:
+     *                 success:
+     *                   type: boolean
+     *                 message:
+     *                   type: string
+     *       401:
+     *         description: User not authenticated
+     *       404:
+     *         description: Internal profile not found
+     *       500:
+     *         description: Internal server error
+     */
     // Delete current user's internal profile
     async deleteMyProfile(req: Request, res: Response): Promise<void> {
         try {
@@ -121,6 +333,37 @@ export class InternalProfileController {
         }
     }
 
+    /**
+     * @swagger
+     * /api/internal-profiles/all:
+     *   get:
+     *     summary: Get all internal profiles (Admin only)
+     *     tags: [Profile]
+     *     security:
+     *       - bearerAuth: []
+     *     responses:
+     *       200:
+     *         description: Internal profiles retrieved successfully
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *               properties:
+     *                 success:
+     *                   type: boolean
+     *                 data:
+     *                   type: array
+     *                   items:
+     *                     $ref: '#/components/schemas/InternalProfile'
+     *                 total:
+     *                   type: number
+     *       401:
+     *         description: User not authenticated
+     *       403:
+     *         description: Access denied
+     *       500:
+     *         description: Internal server error
+     */
     // Admin: Get all internal profiles
     async getAllProfiles(req: Request, res: Response): Promise<void> {
         try {
