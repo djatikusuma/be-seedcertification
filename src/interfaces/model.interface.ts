@@ -7,6 +7,7 @@ export interface BaseEntityInterface {
 export interface UserInterface extends BaseEntityInterface {
     name: string;
     email: string;
+    emailHash?: string; // Added for encrypted email searching
     password: string;
     roleId: string;
     deletionRequested?: boolean;

@@ -73,9 +73,9 @@ export class CryptoUtil {
      * Encrypt a string using AES-256-CBC
      * @param plaintext - Text to encrypt
      * @param password - Password for encryption (optional, uses default if not provided)
-     * @returns Encryption result with encrypted data, IV, and salt
+     * @returns Encryption result in format: encrypted:iv:salt
      */
-    public static encrypt(plaintext: string, password?: string): EncryptionResult {
+    public static encrypt(plaintext: string, password?: string): string {
         try {
             if (!plaintext) {
                 throw new Error('Plaintext cannot be empty');
@@ -95,36 +95,45 @@ export class CryptoUtil {
                 padding: this.PADDING
             });
 
-            return {
-                encrypted: encrypted.toString(),
-                iv: iv,
-                salt: salt
-            };
+            // Return in format: encrypted:iv:salt
+            return `${encrypted.toString()}:${iv}:${salt}`;
         } catch (error) {
-            throw new Error(`Encryption failed: ${error.message}`);
+            throw new Error(`Encryption failed: ${(error as Error).message}`);
         }
     }
 
     /**
      * Decrypt a string using AES-256-CBC
-     * @param encryptionData - Object containing encrypted data, IV, and salt
+     * @param encryptedData - Encrypted data in format: encrypted:iv:salt
      * @param password - Password for decryption (optional, uses default if not provided)
      * @returns Decrypted plaintext
      */
-    public static decrypt(encryptionData: DecryptionInput, password?: string): string {
+    public static decrypt(encryptedData: string, password?: string): string {
         try {
-            if (!encryptionData.encrypted || !encryptionData.iv || !encryptionData.salt) {
+            if (!encryptedData || typeof encryptedData !== 'string') {
+                throw new Error('Invalid encrypted data: must be a non-empty string');
+            }
+
+            // Parse the format: encrypted:iv:salt
+            const parts = encryptedData.split(':');
+            if (parts.length !== 3) {
+                throw new Error('Invalid encrypted data format: expected encrypted:iv:salt');
+            }
+
+            const [encrypted, iv, salt] = parts;
+
+            if (!encrypted || !iv || !salt) {
                 throw new Error('Invalid encryption data: missing encrypted text, IV, or salt');
             }
 
             const decryptionPassword = password || this.ENCRYPTION_KEY;
 
             // Derive the same key using password and salt
-            const key = this.deriveKey(decryptionPassword, encryptionData.salt);
+            const key = this.deriveKey(decryptionPassword, salt);
 
             // Decrypt the data
-            const decrypted = CryptoJS.AES.decrypt(encryptionData.encrypted, key, {
-                iv: CryptoJS.enc.Hex.parse(encryptionData.iv),
+            const decrypted = CryptoJS.AES.decrypt(encrypted, key, {
+                iv: CryptoJS.enc.Hex.parse(iv),
                 mode: this.MODE,
                 padding: this.PADDING
             });
@@ -137,7 +146,7 @@ export class CryptoUtil {
 
             return plaintext;
         } catch (error) {
-            throw new Error(`Decryption failed: ${error.message}`);
+            throw new Error(`Decryption failed: ${(error as Error).message}`);
         }
     }
 
@@ -145,29 +154,29 @@ export class CryptoUtil {
      * Encrypt a JavaScript object
      * @param object - Object to encrypt
      * @param password - Password for encryption (optional)
-     * @returns Encryption result with encrypted JSON data, IV, and salt
+     * @returns Encryption result in format: encrypted:iv:salt
      */
-    public static encryptObject(object: any, password?: string): EncryptionResult {
+    public static encryptObject(object: any, password?: string): string {
         try {
             const jsonString = JSON.stringify(object);
             return this.encrypt(jsonString, password);
         } catch (error) {
-            throw new Error(`Object encryption failed: ${error.message}`);
+            throw new Error(`Object encryption failed: ${(error as Error).message}`);
         }
     }
 
     /**
      * Decrypt to a JavaScript object
-     * @param encryptionData - Object containing encrypted data, IV, and salt
+     * @param encryptedData - Encrypted data in format: encrypted:iv:salt
      * @param password - Password for decryption (optional)
      * @returns Decrypted object
      */
-    public static decryptToObject<T = any>(encryptionData: DecryptionInput, password?: string): T {
+    public static decryptToObject<T = any>(encryptedData: string, password?: string): T {
         try {
-            const jsonString = this.decrypt(encryptionData, password);
+            const jsonString = this.decrypt(encryptedData, password);
             return JSON.parse(jsonString) as T;
         } catch (error) {
-            throw new Error(`Object decryption failed: ${error.message}`);
+            throw new Error(`Object decryption failed: ${(error as Error).message}`);
         }
     }
 
@@ -243,8 +252,8 @@ export class CryptoUtil {
         for (const field of fieldsToEncrypt) {
             if (encryptedData[field] && typeof encryptedData[field] === 'string') {
                 const encrypted = this.encrypt(encryptedData[field], password);
-                // Store as JSON string to preserve all encryption data
-                encryptedData[field] = JSON.stringify(encrypted);
+                // Store the encrypted string directly (no JSON wrapping)
+                encryptedData[field] = encrypted;
             }
         }
 
@@ -264,12 +273,26 @@ export class CryptoUtil {
         for (const field of fieldsToDecrypt) {
             if (decryptedData[field] && typeof decryptedData[field] === 'string') {
                 try {
-                    // Parse the stored encryption data
-                    const encryptionData = JSON.parse(decryptedData[field]) as DecryptionInput;
-                    decryptedData[field] = this.decrypt(encryptionData, password);
+                    // Check if it's in the new format (encrypted:iv:salt)
+                    if (decryptedData[field].includes(':') && decryptedData[field].split(':').length === 3) {
+                        decryptedData[field] = this.decrypt(decryptedData[field], password);
+                    } else {
+                        // Try old JSON format for backward compatibility
+                        try {
+                            const encryptionData = JSON.parse(decryptedData[field]);
+                            if (encryptionData.encrypted && encryptionData.iv && encryptionData.salt) {
+                                // Convert old format to new format
+                                const oldFormatString = `${encryptionData.encrypted}:${encryptionData.iv}:${encryptionData.salt}`;
+                                decryptedData[field] = this.decrypt(oldFormatString, password);
+                            }
+                        } catch {
+                            // If it's not JSON and not new format, assume it's plain text
+                            console.warn(`Field ${field} appears to be plain text, not encrypted`);
+                        }
+                    }
                 } catch (error) {
-                    // If parsing fails, the field might not be encrypted
-                    console.warn(`Failed to decrypt field ${field}:`, error.message);
+                    // If decryption fails, the field might not be encrypted
+                    console.warn(`Failed to decrypt field ${field}:`, (error as Error).message);
                 }
             }
         }

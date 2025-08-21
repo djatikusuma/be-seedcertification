@@ -12,11 +12,8 @@ export class AuthService {
      */
     async login(loginData: LoginRequestInterface): Promise<string | null> {
         try {
-            // Find the user by email
-            const user = await User.findOne({
-                where: { email: loginData.email },
-                include: ['role'] // Include the role to access role name
-            });
+            // Find the user by email using the findByEmail method that handles encryption
+            const user = await User.findByEmail(loginData.email);
 
             // If user not found or password doesn't match
             if (!user || !(await this.comparePassword(loginData.password, user.password))) {
@@ -26,7 +23,7 @@ export class AuthService {
             // Generate JWT token
             const token = await this.generateToken({
                 id: user.id,
-                email: user.email,
+                email: user.email, // This will be the decrypted email
                 roleId: user.roleId
             });
 

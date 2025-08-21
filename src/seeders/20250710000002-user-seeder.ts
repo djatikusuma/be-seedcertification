@@ -1,6 +1,8 @@
 import { QueryInterface, QueryTypes } from 'sequelize';
 import { v4 as uuidv4 } from 'uuid';
-import bcrypt from 'bcryptjs';
+import * as bcrypt from 'bcryptjs';
+import { User } from '../models/User.model';
+import { CryptoUtil } from '../utils/crypto.util';
 
 // Get role IDs from the database
 const getRoles = async (queryInterface: QueryInterface) => {
@@ -37,8 +39,6 @@ export = {
                 email: 'admin@example.com',
                 password: adminPassword,
                 roleId: roles.admin,
-                createdAt: new Date(),
-                updatedAt: new Date(),
             },
             // Regular users (for internal profiles)
             {
@@ -47,8 +47,6 @@ export = {
                 email: 'internal1@example.com',
                 password: userPassword,
                 roleId: roles.user,
-                createdAt: new Date(),
-                updatedAt: new Date(),
             },
             {
                 id: uuidv4(),
@@ -56,8 +54,6 @@ export = {
                 email: 'internal2@example.com',
                 password: userPassword,
                 roleId: roles.user,
-                createdAt: new Date(),
-                updatedAt: new Date(),
             },
             // Petani users
             {
@@ -66,8 +62,6 @@ export = {
                 email: 'petani1@example.com',
                 password: petaniPassword,
                 roleId: roles.Petani,
-                createdAt: new Date(),
-                updatedAt: new Date(),
             },
             {
                 id: uuidv4(),
@@ -75,8 +69,6 @@ export = {
                 email: 'petani2@example.com',
                 password: petaniPassword,
                 roleId: roles.Petani,
-                createdAt: new Date(),
-                updatedAt: new Date(),
             },
             // Perusahaan users
             {
@@ -85,8 +77,6 @@ export = {
                 email: 'perusahaan1@example.com',
                 password: perusahaanPassword,
                 roleId: roles.Perusahaan,
-                createdAt: new Date(),
-                updatedAt: new Date(),
             },
             {
                 id: uuidv4(),
@@ -94,15 +84,37 @@ export = {
                 email: 'perusahaan2@example.com',
                 password: perusahaanPassword,
                 roleId: roles.Perusahaan,
-                createdAt: new Date(),
-                updatedAt: new Date(),
             },
         ];
 
-        await queryInterface.bulkInsert('users', users);
+        // Manually encrypt fields before inserting
+        console.log('🔐 Encrypting user data before seeding...');
+        const encryptedUsers = users.map(user => {
+            // Encrypt name and email using new format
+            const encryptedName = CryptoUtil.encrypt(user.name);
+            const encryptedEmail = CryptoUtil.encrypt(user.email);
+
+            // Create email hash for searching
+            const emailHash = CryptoUtil.hash(user.email.toLowerCase());
+
+            return {
+                id: user.id,
+                name: encryptedName,
+                email: encryptedEmail,
+                emailHash: emailHash,
+                password: user.password,
+                roleId: user.roleId,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            };
+        });
+
+        await queryInterface.bulkInsert('users', encryptedUsers);
+        console.log('✅ All users seeded with encrypted data!');
     },
 
     down: async (queryInterface: QueryInterface) => {
         await queryInterface.bulkDelete('users', {});
+        console.log('🗑️  All users deleted');
     },
 };

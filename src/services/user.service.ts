@@ -1,6 +1,7 @@
 import { UserInterface } from '../interfaces/model.interface';
 import { UserRepository } from '../repositories/user.repository';
 import { BaseService } from './base.service';
+import { User } from '../models/User.model';
 import bcrypt from 'bcryptjs';
 
 export class UserService extends BaseService<UserInterface> {
@@ -13,10 +14,16 @@ export class UserService extends BaseService<UserInterface> {
     }
 
     async findByEmail(email: string): Promise<UserInterface | null> {
-        return this.userRepository.findByEmail(email);
+        // Use the model's findByEmail method that works with encrypted data
+        return await User.findByEmail(email);
     }
 
     async create(user: Partial<UserInterface>): Promise<UserInterface> {
+        // Check if email already exists
+        if (user.email && await User.emailExists(user.email)) {
+            throw new Error('Email already exists');
+        }
+
         // Hash password before saving
         if (user.password) {
             const salt = await bcrypt.genSalt(10);

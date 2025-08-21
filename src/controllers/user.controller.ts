@@ -241,8 +241,8 @@ export class UserController {
             }
 
             try {
-                // Check if email already exists
-                const existingUser = await this.userService.findByEmail(req.body.email);
+                // Check if email already exists using the new encrypted method
+                const existingUser = await User.findByEmail(req.body.email);
                 if (existingUser) {
                     return res.status(400).json({ status: 'error', message: 'Email already in use' });
                 }
@@ -345,7 +345,7 @@ export class UserController {
 
                 // Check if email is being changed and already exists
                 if (req.body.email) {
-                    const existingUser = await this.userService.findByEmail(req.body.email);
+                    const existingUser = await User.findByEmail(req.body.email);
                     if (existingUser && existingUser.id !== id) {
                         return res.status(400).json({ status: 'error', message: 'Email already in use' });
                     }
