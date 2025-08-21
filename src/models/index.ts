@@ -1,6 +1,8 @@
 import { User } from './User.model';
 import { Role } from './Role.model';
 import { Menu } from './Menu.model';
+import { Profile } from './Profile.model';
+import { ProfileApplicant } from './ProfileApplicant.model';
 import sequelize from '../config/sequelize';
 
 // Models will be initialized when imported by sequelize
@@ -16,5 +18,5 @@ const initializeAssociations = () => {
 // Initialize associations after Sequelize has loaded all models
 initializeAssociations();
 
-export { User, Role, Menu };
-export default { User, Role, Menu };
+export { User, Role, Menu, Profile, ProfileApplicant };
+export default { User, Role, Menu, Profile, ProfileApplicant };
