@@ -31,8 +31,24 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
             });
         }
 
-        // Add the user payload to the request
-        (req as AuthenticatedRequest).user = decodedToken;
+        // Get full user data with role information for masking purposes
+        const { User } = await import('../models/User.model');
+        const fullUser = await User.findByPk(decodedToken.id, {
+            include: ['role']
+        });
+
+        if (!fullUser) {
+            return res.status(401).json({
+                status: 'error',
+                message: 'Unauthorized - User not found'
+            });
+        }
+
+        // Add both the JWT payload and full user data to the request
+        (req as AuthenticatedRequest).user = {
+            ...decodedToken,
+            role: fullUser.role
+        };
 
         next();
     } catch (error) {

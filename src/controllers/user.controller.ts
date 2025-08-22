@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { UserService } from '../services/user.service';
 import { body, validationResult } from 'express-validator';
 import { User } from '../models/User.model';
+import { DataMaskingUtil, MaskingType } from '../utils/masking.util';
 
 /**
  * @swagger
@@ -55,10 +56,63 @@ import { User } from '../models/User.model';
  */
 
 export class UserController {
-    private userService: UserService;
+    private userService = new UserService();
 
-    constructor() {
-        this.userService = new UserService();
+    /**
+     * Apply data masking based on user role
+     */
+    private applyDataMasking(userData: any, requestingUserRole: string): any {
+        if (!userData) return userData;
+
+        // Create a copy to avoid modifying original data
+        const maskedData = JSON.parse(JSON.stringify(userData));
+
+        // Different masking levels based on role
+        switch (requestingUserRole?.toLowerCase()) {
+            case 'admin':
+                // Light masking for admin - show more data
+                if (maskedData.email) {
+                    maskedData.email = DataMaskingUtil.mask(maskedData.email, MaskingType.EMAIL, {
+                        emailVisibleChars: 4
+                    });
+                }
+                break;
+
+            case 'manager':
+                // Medium masking for manager
+                if (maskedData.email) {
+                    maskedData.email = DataMaskingUtil.mask(maskedData.email, MaskingType.EMAIL, {
+                        emailVisibleChars: 3
+                    });
+                }
+                if (maskedData.name) {
+                    maskedData.name = DataMaskingUtil.mask(maskedData.name, MaskingType.PARTIAL, {
+                        visibleStart: 3, visibleEnd: 1
+                    });
+                }
+                break;
+
+            default: // user, guest, or unknown roles
+                // Heavy masking for regular users
+                if (maskedData.email) {
+                    maskedData.email = DataMaskingUtil.mask(maskedData.email, MaskingType.EMAIL, {
+                        emailVisibleChars: 2
+                    });
+                }
+                if (maskedData.name) {
+                    maskedData.name = DataMaskingUtil.mask(maskedData.name, MaskingType.NAME);
+                }
+                break;
+        }
+
+        return maskedData;
+    }
+
+    /**
+     * Apply masking to array of users
+     */
+    private applyDataMaskingToArray(usersData: any[], requestingUserRole: string): any[] {
+        return usersData.map(user => this.applyDataMasking(user, requestingUserRole));
     }
 
     /**
@@ -100,7 +154,21 @@ export class UserController {
                 include: ['role'] // Include role information
             });
 
-            res.status(200).json({ status: 'success', data: users });
+            // Get requesting user's role from the authenticated user
+            const requestingUserRole = (req as any).user?.role?.roleName || 'guest';
+
+            // Apply data masking based on requesting user's role
+            const maskedUsers = this.applyDataMaskingToArray(users, requestingUserRole);
+
+            res.status(200).json({
+                status: 'success',
+                data: maskedUsers,
+                meta: {
+                    total: users.length,
+                    masking_applied: true,
+                    masking_level: requestingUserRole
+                }
+            });
         } catch (error) {
             console.error('Error fetching users:', error);
             res.status(500).json({ status: 'error', message: 'Failed to fetch users' });
@@ -160,7 +228,20 @@ export class UserController {
                 return res.status(404).json({ status: 'error', message: 'User not found' });
             }
 
-            res.status(200).json({ status: 'success', data: user });
+            // Get requesting user's role from the authenticated user
+            const requestingUserRole = (req as any).user?.role?.roleName || 'guest';
+
+            // Apply data masking based on requesting user's role
+            const maskedUser = this.applyDataMasking(user, requestingUserRole);
+
+            res.status(200).json({
+                status: 'success',
+                data: maskedUser,
+                meta: {
+                    masking_applied: true,
+                    masking_level: requestingUserRole
+                }
+            });
         } catch (error) {
             console.error('Error fetching user by ID:', error);
             res.status(500).json({ status: 'error', message: 'Failed to fetch user' });
