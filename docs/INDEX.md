@@ -41,6 +41,14 @@ Welcome to the comprehensive documentation for Sisolehbun Blockchain Backend. Th
 - Best practices and security notes
 - Performance optimization tips
 
+### [User Masking Implementation](./USER_MASKING_IMPLEMENTATION.md)
+**Complete implementation guide for User module masking**
+- Step-by-step implementation in User model, service, repository, and controller
+- Role-based masking levels (Admin, Manager, User, Guest)
+- Integration with encryption system
+- API response format with masking metadata
+- Testing examples and security benefits
+
 ## 👤 Feature Documentation
 
 ### [Profile System Guide](./PROFILE_SYSTEM.md)

@@ -59,63 +59,6 @@ export class UserController {
     private userService = new UserService();
 
     /**
-     * Apply data masking based on user role
-     */
-    private applyDataMasking(userData: any, requestingUserRole: string): any {
-        if (!userData) return userData;
-
-        // Create a copy to avoid modifying original data
-        const maskedData = JSON.parse(JSON.stringify(userData));
-
-        // Different masking levels based on role
-        switch (requestingUserRole?.toLowerCase()) {
-            case 'admin':
-                // Light masking for admin - show more data
-                if (maskedData.email) {
-                    maskedData.email = DataMaskingUtil.mask(maskedData.email, MaskingType.EMAIL, {
-                        emailVisibleChars: 4
-                    });
-                }
-                break;
-
-            case 'manager':
-                // Medium masking for manager
-                if (maskedData.email) {
-                    maskedData.email = DataMaskingUtil.mask(maskedData.email, MaskingType.EMAIL, {
-                        emailVisibleChars: 3
-                    });
-                }
-                if (maskedData.name) {
-                    maskedData.name = DataMaskingUtil.mask(maskedData.name, MaskingType.PARTIAL, {
-                        visibleStart: 3, visibleEnd: 1
-                    });
-                }
-                break;
-
-            default: // user, guest, or unknown roles
-                // Heavy masking for regular users
-                if (maskedData.email) {
-                    maskedData.email = DataMaskingUtil.mask(maskedData.email, MaskingType.EMAIL, {
-                        emailVisibleChars: 2
-                    });
-                }
-                if (maskedData.name) {
-                    maskedData.name = DataMaskingUtil.mask(maskedData.name, MaskingType.NAME);
-                }
-                break;
-        }
-
-        return maskedData;
-    }
-
-    /**
-     * Apply masking to array of users
-     */
-    private applyDataMaskingToArray(usersData: any[], requestingUserRole: string): any[] {
-        return usersData.map(user => this.applyDataMasking(user, requestingUserRole));
-    }
-
-    /**
      * @swagger
      * /api/users:
      *   get:
@@ -148,23 +91,17 @@ export class UserController {
      */
     getAllUsers = async (req: Request, res: Response) => {
         try {
-            // Get users directly from the User model instead of through the service
-            const users = await User.findAll({
-                attributes: { exclude: ['password'] }, // Exclude password from the response
-                include: ['role'] // Include role information
-            });
-
             // Get requesting user's role from the authenticated user
             const requestingUserRole = (req as any).user?.role?.roleName || 'guest';
 
-            // Apply data masking based on requesting user's role
-            const maskedUsers = this.applyDataMaskingToArray(users, requestingUserRole);
+            // Use service method with masking
+            const maskedUsers = await this.userService.findAllWithMasking(requestingUserRole);
 
             res.status(200).json({
                 status: 'success',
                 data: maskedUsers,
                 meta: {
-                    total: users.length,
+                    total: maskedUsers.length,
                     masking_applied: true,
                     masking_level: requestingUserRole
                 }
@@ -218,21 +155,15 @@ export class UserController {
         try {
             const { id } = req.params;
 
-            // Get user directly from the model to exclude password
-            const user = await User.findByPk(id, {
-                attributes: { exclude: ['password'] },
-                include: ['role']
-            });
-
-            if (!user) {
-                return res.status(404).json({ status: 'error', message: 'User not found' });
-            }
-
             // Get requesting user's role from the authenticated user
             const requestingUserRole = (req as any).user?.role?.roleName || 'guest';
 
-            // Apply data masking based on requesting user's role
-            const maskedUser = this.applyDataMasking(user, requestingUserRole);
+            // Use service method with masking
+            const maskedUser = await this.userService.findByIdWithMasking(id, requestingUserRole);
+
+            if (!maskedUser) {
+                return res.status(404).json({ status: 'error', message: 'User not found' });
+            }
 
             res.status(200).json({
                 status: 'success',
@@ -331,13 +262,20 @@ export class UserController {
                 // Create the user
                 const user = await this.userService.create(req.body);
 
-                // Fetch the user back without password for the response
-                const createdUser = await User.findByPk(user.id, {
-                    attributes: { exclude: ['password'] },
-                    include: ['role']
-                });
+                // Get requesting user's role from the authenticated user
+                const requestingUserRole = (req as any).user?.role?.roleName || 'guest';
 
-                res.status(201).json({ status: 'success', data: createdUser });
+                // Get the created user with masking
+                const createdUser = await this.userService.findByIdWithMasking(user.id, requestingUserRole);
+
+                res.status(201).json({
+                    status: 'success',
+                    data: createdUser,
+                    meta: {
+                        masking_applied: true,
+                        masking_level: requestingUserRole
+                    }
+                });
             } catch (error) {
                 res.status(500).json({ status: 'error', message: 'Failed to create user' });
             }
@@ -424,29 +362,29 @@ export class UserController {
             try {
                 const { id } = req.params;
 
-                // Check if email is being changed and already exists
-                if (req.body.email) {
-                    const existingUser = await User.findByEmail(req.body.email);
-                    if (existingUser && existingUser.id !== id) {
-                        return res.status(400).json({ status: 'error', message: 'Email already in use' });
-                    }
-                }
+                // Get requesting user's role from the authenticated user
+                const requestingUserRole = (req as any).user?.role?.roleName || 'guest';
 
-                // Update the user
-                const updated = await this.userService.update(id, req.body);
+                // Use service method with masking
+                const updatedUser = await this.userService.updateWithMasking(id, req.body, requestingUserRole);
 
-                if (!updated) {
+                if (!updatedUser) {
                     return res.status(404).json({ status: 'error', message: 'User not found' });
                 }
 
-                // Fetch the updated user without password for the response
-                const updatedUser = await User.findByPk(id, {
-                    attributes: { exclude: ['password'] },
-                    include: ['role']
+                res.status(200).json({
+                    status: 'success',
+                    data: updatedUser,
+                    meta: {
+                        masking_applied: true,
+                        masking_level: requestingUserRole
+                    }
                 });
-
-                res.status(200).json({ status: 'success', data: updatedUser });
-            } catch (error) {
+            } catch (error: any) {
+                if (error.message === 'Email already exists') {
+                    return res.status(400).json({ status: 'error', message: error.message });
+                }
+                console.error('Error updating user:', error);
                 res.status(500).json({ status: 'error', message: 'Failed to update user' });
             }
         }

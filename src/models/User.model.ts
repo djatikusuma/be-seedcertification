@@ -2,6 +2,7 @@ import { Table, Column, Model, DataType, BelongsTo, ForeignKey, HasOne, BeforeCr
 import { UserInterface } from '../interfaces/model.interface';
 import Role from './Role.model';
 import { CryptoUtil } from '../utils/crypto.util';
+import { DataMaskingUtil, MaskingType, MaskingOptions } from '../utils/masking.util';
 
 @Table({
     tableName: 'users',
@@ -209,6 +210,69 @@ export class User extends Model<UserInterface> implements UserInterface {
         } catch (error: any) {
             throw new Error(`Failed to decrypt field value: ${error?.message || 'Unknown error'}`);
         }
+    }
+
+    /**
+     * Apply data masking based on user role
+     */
+    applyMasking(requestingUserRole: string = 'guest'): Partial<UserInterface> {
+        const userData = this.toJSON() as any;
+
+        // Remove sensitive fields that should never be exposed
+        const { password, emailHash, ...sanitizedData } = userData;
+
+        // Apply role-based masking
+        // switch (requestingUserRole.toLowerCase()) {
+        //     case 'admin':
+        //         // Admin sees everything unmasked
+        //         return sanitizedData;
+
+        //     case 'manager':
+        //         // Manager sees partial masking
+        //         if (sanitizedData.email) {
+        //             sanitizedData.email = DataMaskingUtil.mask(sanitizedData.email, MaskingType.EMAIL, {
+        //                 emailKeepDomain: true,
+        //                 emailVisibleChars: 3
+        //             });
+        //         }
+        //         if (sanitizedData.name) {
+        //             sanitizedData.name = DataMaskingUtil.mask(sanitizedData.name, MaskingType.NAME, {
+        //                 nameKeepFirstChar: true,
+        //                 nameKeepLastChar: true
+        //             });
+        //         }
+        //         return sanitizedData;
+
+        //     default: // user, guest, or unknown roles
+        // Heavy masking for regular users
+        if (sanitizedData.email) {
+            sanitizedData.email = DataMaskingUtil.mask(sanitizedData.email, MaskingType.EMAIL, {
+                emailKeepDomain: false,
+                emailVisibleChars: 2
+            });
+        }
+        if (sanitizedData.name) {
+            sanitizedData.name = DataMaskingUtil.mask(sanitizedData.name, MaskingType.NAME, {
+                nameKeepFirstChar: true,
+                nameKeepLastChar: false
+            });
+        }
+        return sanitizedData;
+        // }
+    }
+
+    /**
+     * Apply masking to multiple user instances
+     */
+    static applyMaskingToArray(users: User[], requestingUserRole: string = 'guest'): Partial<UserInterface>[] {
+        return users.map(user => user.applyMasking(requestingUserRole));
+    }
+
+    /**
+     * Get masked user data with role information
+     */
+    getMaskedData(requestingUserRole: string = 'guest'): Partial<UserInterface> {
+        return this.applyMasking(requestingUserRole);
     }
 
     /**

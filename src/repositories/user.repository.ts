@@ -8,6 +8,32 @@ export class UserRepository extends BaseRepository<User> {
     }
 
     async findByEmail(email: string): Promise<User | null> {
-        return this.model.findOne({ where: { email } });
+        // Use the User model's findByEmail method which handles encrypted data
+        return await User.findByEmail(email);
+    }
+
+    async findAllWithMasking(requestingUserRole: string = 'guest'): Promise<Partial<UserInterface>[]> {
+        const users = await User.findAll({
+            attributes: { exclude: ['password'] },
+            include: ['role']
+        });
+        return User.applyMaskingToArray(users, requestingUserRole);
+    }
+
+    async findByIdWithMasking(id: string, requestingUserRole: string = 'guest'): Promise<Partial<UserInterface> | null> {
+        const user = await User.findByPk(id, {
+            attributes: { exclude: ['password'] },
+            include: ['role']
+        });
+
+        if (!user) {
+            return null;
+        }
+
+        return user.applyMasking(requestingUserRole);
+    }
+
+    async emailExists(email: string): Promise<boolean> {
+        return await User.emailExists(email);
     }
 }
