@@ -29,43 +29,13 @@ export class ProfileApplicantRepository extends BaseRepository<ProfileApplicant>
     }
 
     async findByNik(nik: string): Promise<ProfileApplicant | null> {
-        return await this.model.findOne({
-            where: { nik },
-            include: [
-                {
-                    model: User,
-                    as: 'user',
-                    attributes: ['id', 'name', 'email'],
-                    include: [
-                        {
-                            model: Role,
-                            as: 'role',
-                            attributes: ['id', 'roleName'],
-                        },
-                    ],
-                },
-            ],
-        });
+        // Use the ProfileApplicant model's findByNik method which handles encrypted data
+        return await ProfileApplicant.findByNik(nik);
     }
 
     async findByEmail(email: string): Promise<ProfileApplicant | null> {
-        return await this.model.findOne({
-            where: { email },
-            include: [
-                {
-                    model: User,
-                    as: 'user',
-                    attributes: ['id', 'name', 'email'],
-                    include: [
-                        {
-                            model: Role,
-                            as: 'role',
-                            attributes: ['id', 'roleName'],
-                        },
-                    ],
-                },
-            ],
-        });
+        // Use the ProfileApplicant model's findByEmail method which handles encrypted data
+        return await ProfileApplicant.findByEmail(email);
     }
 
     async findByRoleName(roleName: string): Promise<ProfileApplicant[]> {

@@ -30,6 +30,7 @@ export interface ProfileInterface extends BaseEntityInterface {
     userId: string;
     nip?: string;
     nik: string;
+    nikHash?: string; // Added for encrypted NIK searching
     nama: string;
     jabatan?: string;
     telepon?: string;
@@ -42,8 +43,10 @@ export interface ProfileInterface extends BaseEntityInterface {
 export interface ProfileApplicantInterface extends BaseEntityInterface {
     userId: string;
     nik: string;
+    nikHash?: string; // Added for encrypted NIK searching
     npwp?: string;
     email: string;
+    emailHash?: string; // Added for encrypted email searching
     namaPemohon: string;
     telepon?: string;
     alamatPemohon?: string;

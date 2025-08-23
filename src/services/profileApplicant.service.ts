@@ -1,6 +1,7 @@
 import { BaseService } from './base.service';
 import { ProfileApplicant } from '../models/ProfileApplicant.model';
 import { ProfileApplicantRepository } from '../repositories/profileApplicant.repository';
+import { ProfileApplicantInterface } from '../interfaces/model.interface';
 
 export class ProfileApplicantService extends BaseService<ProfileApplicant> {
     private profileApplicantRepository: ProfileApplicantRepository;
@@ -15,12 +16,31 @@ export class ProfileApplicantService extends BaseService<ProfileApplicant> {
         return await this.profileApplicantRepository.findByUserId(userId);
     }
 
+    async getProfileByUserIdWithMasking(userId: string, requestingUserRole: string = 'guest'): Promise<Partial<ProfileApplicantInterface> | null> {
+        const profile = await this.profileApplicantRepository.findByUserId(userId);
+
+        if (!profile) {
+            return null;
+        }
+
+        return profile.applyMasking(requestingUserRole);
+    }
+
+    async getAllProfilesWithMasking(requestingUserRole: string = 'guest'): Promise<Partial<ProfileApplicantInterface>[]> {
+        const profiles = await ProfileApplicant.findAll({
+            include: ['user']
+        });
+        return ProfileApplicant.applyMaskingToArray(profiles, requestingUserRole);
+    }
+
     async getProfileByNik(nik: string): Promise<ProfileApplicant | null> {
-        return await this.profileApplicantRepository.findByNik(nik);
+        // Use the model's findByNik method that works with encrypted data
+        return await ProfileApplicant.findByNik(nik);
     }
 
     async getProfileByEmail(email: string): Promise<ProfileApplicant | null> {
-        return await this.profileApplicantRepository.findByEmail(email);
+        // Use the model's findByEmail method that works with encrypted data
+        return await ProfileApplicant.findByEmail(email);
     }
 
     async getProfilesByRole(roleName: 'Petani' | 'Perusahaan'): Promise<ProfileApplicant[]> {
@@ -48,14 +68,12 @@ export class ProfileApplicantService extends BaseService<ProfileApplicant> {
         }
 
         // Check if NIK is already used
-        const existingNik = await this.profileApplicantRepository.findByNik(profileData.nik);
-        if (existingNik) {
+        if (await ProfileApplicant.nikExists(profileData.nik)) {
             throw new Error('NIK already exists');
         }
 
         // Check if email is already used
-        const existingEmail = await this.profileApplicantRepository.findByEmail(profileData.email);
-        if (existingEmail) {
+        if (await ProfileApplicant.emailExists(profileData.email)) {
             throw new Error('Email already exists');
         }
 
@@ -68,7 +86,7 @@ export class ProfileApplicantService extends BaseService<ProfileApplicant> {
 
         // If updating NIK, check for duplicates
         if (updateData.nik) {
-            const existingNik = await this.profileApplicantRepository.findByNik(updateData.nik);
+            const existingNik = await ProfileApplicant.findByNik(updateData.nik);
             if (existingNik && existingNik.userId !== userId) {
                 throw new Error('NIK already exists');
             }
@@ -76,13 +94,23 @@ export class ProfileApplicantService extends BaseService<ProfileApplicant> {
 
         // If updating email, check for duplicates
         if (updateData.email) {
-            const existingEmail = await this.profileApplicantRepository.findByEmail(updateData.email);
+            const existingEmail = await ProfileApplicant.findByEmail(updateData.email);
             if (existingEmail && existingEmail.userId !== userId) {
                 throw new Error('Email already exists');
             }
         }
 
         return await this.profileApplicantRepository.updateByUserId(userId, updateData);
+    }
+
+    async updateProfileWithMasking(userId: string, profileData: Partial<ProfileApplicant>, requestingUserRole: string = 'guest'): Promise<Partial<ProfileApplicantInterface> | null> {
+        const updatedProfile = await this.updateProfile(userId, profileData);
+
+        if (!updatedProfile) {
+            return null;
+        }
+
+        return updatedProfile.applyMasking(requestingUserRole);
     }
 
     async deleteProfile(userId: string): Promise<boolean> {

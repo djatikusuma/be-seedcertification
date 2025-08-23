@@ -49,6 +49,14 @@ Welcome to the comprehensive documentation for Sisolehbun Blockchain Backend. Th
 - API response format with masking metadata
 - Testing examples and security benefits
 
+### [Profile Encryption Implementation](./PROFILE_ENCRYPTION_IMPLEMENTATION.md)
+**Complete encryption implementation for Profile and ProfileApplicant modules**
+- AES-256 encryption for sensitive personal and business data
+- Hash-based search optimization for encrypted fields
+- Role-based masking for Profile and ProfileApplicant data
+- Database migration and service layer integration
+- Comprehensive testing and security compliance
+
 ## 👤 Feature Documentation
 
 ### [Profile System Guide](./PROFILE_SYSTEM.md)

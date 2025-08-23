@@ -30,6 +30,10 @@ export = {
         const userPassword = await bcrypt.hash('user123', salt);
         const petaniPassword = await bcrypt.hash('petani123', salt);
         const perusahaanPassword = await bcrypt.hash('perusahaan123', salt);
+        const inspekturPassword = await bcrypt.hash('inspektur123', salt);
+        const inspekturKetuaPassword = await bcrypt.hash('inspektur_ketua123', salt);
+        const verifikaturPassword = await bcrypt.hash('verifikatur123', salt);
+        const kepalaPassword = await bcrypt.hash('kepala123', salt);
 
         const users = [
             // Admin user
@@ -61,14 +65,14 @@ export = {
                 name: 'Petani User 1',
                 email: 'petani1@example.com',
                 password: petaniPassword,
-                roleId: roles.Petani,
+                roleId: roles.petani,
             },
             {
                 id: uuidv4(),
                 name: 'Petani User 2',
                 email: 'petani2@example.com',
                 password: petaniPassword,
-                roleId: roles.Petani,
+                roleId: roles.petani,
             },
             // Perusahaan users
             {
@@ -76,14 +80,60 @@ export = {
                 name: 'Perusahaan User 1',
                 email: 'perusahaan1@example.com',
                 password: perusahaanPassword,
-                roleId: roles.Perusahaan,
+                roleId: roles.perusahaan,
             },
             {
                 id: uuidv4(),
                 name: 'Perusahaan User 2',
                 email: 'perusahaan2@example.com',
                 password: perusahaanPassword,
-                roleId: roles.Perusahaan,
+                roleId: roles.perusahaan,
+            },
+            // Inspektur users
+            {
+                id: uuidv4(),
+                name: 'Inspektur User 1',
+                email: 'inspektur1@example.com',
+                password: inspekturPassword,
+                roleId: roles.inspektur,
+            },
+            {
+                id: uuidv4(),
+                name: 'Inspektur User 2',
+                email: 'inspektur2@example.com',
+                password: inspekturPassword,
+                roleId: roles.inspektur,
+            },
+            // Inspektur Ketua users
+            {
+                id: uuidv4(),
+                name: 'Inspektur Ketua User 1',
+                email: 'inspektur_ketua1@example.com',
+                password: inspekturKetuaPassword,
+                roleId: roles.inspektur_ketua,
+            },
+            // Verifikatur users
+            {
+                id: uuidv4(),
+                name: 'Verifikatur User 1',
+                email: 'verifikatur1@example.com',
+                password: verifikaturPassword,
+                roleId: roles.verifikatur,
+            },
+            {
+                id: uuidv4(),
+                name: 'Verifikatur User 2',
+                email: 'verifikatur2@example.com',
+                password: verifikaturPassword,
+                roleId: roles.verifikatur,
+            },
+            // Kepala users
+            {
+                id: uuidv4(),
+                name: 'Kepala Balai',
+                email: 'kepala1@example.com',
+                password: kepalaPassword,
+                roleId: roles.kepala,
             },
         ];
 

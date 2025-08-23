@@ -21,16 +21,8 @@ export class ProfileRepository extends BaseRepository<Profile> {
     }
 
     async findByNik(nik: string): Promise<Profile | null> {
-        return await this.model.findOne({
-            where: { nik },
-            include: [
-                {
-                    model: User,
-                    as: 'user',
-                    attributes: ['id', 'name', 'email'],
-                },
-            ],
-        });
+        // Use the Profile model's findByNik method which handles encrypted data
+        return await Profile.findByNik(nik);
     }
 
     async createProfile(profileData: Partial<Profile>): Promise<Profile> {

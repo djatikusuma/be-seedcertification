@@ -2,31 +2,58 @@ import { QueryInterface, DataTypes } from 'sequelize';
 
 export = {
     up: async (queryInterface: QueryInterface) => {
-        // Add emailHash column for encrypted email searching
-        await queryInterface.addColumn('users', 'emailHash', {
-            type: DataTypes.STRING,
-            allowNull: true,
-            unique: true,
-        });
+        // Check if emailHash column exists, add only if it doesn't
+        const tableInfo = await queryInterface.describeTable('users');
 
-        // Modify name column to TEXT for encrypted data
-        await queryInterface.changeColumn('users', 'name', {
-            type: DataTypes.TEXT,
-            allowNull: false,
-        });
+        if (!tableInfo.emailHash) {
+            await queryInterface.addColumn('users', 'emailHash', {
+                type: DataTypes.STRING,
+                allowNull: true,
+                unique: true,
+            });
+        }
 
-        // Modify email column to TEXT for encrypted data
-        await queryInterface.changeColumn('users', 'email', {
-            type: DataTypes.TEXT,
-            allowNull: false,
-        });
+        // Check if columns are already TEXT type
+        if (tableInfo.name && tableInfo.name.type !== 'TEXT') {
+            // Create new column with TEXT type
+            await queryInterface.addColumn('users', 'name_new', {
+                type: DataTypes.TEXT,
+                allowNull: true,
+            });
 
-        // Remove unique constraint from email column since encrypted data will be different
-        try {
-            await queryInterface.removeConstraint('users', 'users_email_key');
-        } catch (error) {
-            // Constraint might not exist or have different name
-            console.log('Note: Could not remove email unique constraint, it might not exist');
+            // Copy data from old column to new column
+            await queryInterface.sequelize.query('UPDATE users SET name_new = name');
+
+            // Drop old column and rename new column
+            await queryInterface.removeColumn('users', 'name');
+            await queryInterface.renameColumn('users', 'name_new', 'name');
+
+            // Make it NOT NULL
+            await queryInterface.changeColumn('users', 'name', {
+                type: DataTypes.TEXT,
+                allowNull: false,
+            });
+        }
+
+        if (tableInfo.email && tableInfo.email.type !== 'TEXT') {
+            // Create new column with TEXT type
+            await queryInterface.addColumn('users', 'email_new', {
+                type: DataTypes.TEXT,
+                allowNull: true,
+            });
+
+            // Copy data from old column to new column
+            await queryInterface.sequelize.query('UPDATE users SET email_new = email');
+
+            // Drop old column (this will remove the unique constraint automatically)
+            await queryInterface.removeColumn('users', 'email');
+            await queryInterface.renameColumn('users', 'email_new', 'email');
+
+            // Make it NOT NULL
+            await queryInterface.changeColumn('users', 'email', {
+                type: DataTypes.TEXT,
+                allowNull: false,
+            });
         }
     },
 

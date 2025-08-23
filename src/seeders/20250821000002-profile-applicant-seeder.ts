@@ -1,6 +1,9 @@
 import { QueryInterface, QueryTypes } from 'sequelize';
 import { v4 as uuidv4 } from 'uuid';
 
+import { User } from '../models/User.model';
+import { CryptoUtil } from '../utils/crypto.util';
+
 export = {
     up: async (queryInterface: QueryInterface) => {
         // Get Petani and Perusahaan role users
@@ -25,15 +28,15 @@ export = {
             profileApplicantsData.push({
                 id: uuidv4(),
                 userId: user.id,
-                nik: `331234567890456${index}`,
-                npwp: `12345678900000${index}`,
-                email: `petani${index + 1}@example.com`,
-                namaPemohon: `Petani Pemohon ${index + 1}`,
-                telepon: `08234567890${index}`,
-                alamatPemohon: `Desa Contoh ${index + 1}, Kecamatan Pertanian`,
+                nik: CryptoUtil.encrypt(`321234567890123${index}`),
+                npwp: CryptoUtil.encrypt(`12345678900000${index}`),
+                email: CryptoUtil.encrypt(`petani${index + 1}@example.com`),
+                namaPemohon: CryptoUtil.encrypt(`Petani Pemohon ${index + 1}`),
+                telepon: CryptoUtil.encrypt(`08234567890${index}`),
+                alamatPemohon: CryptoUtil.encrypt(`Desa Contoh ${index + 1}, Kecamatan Pertanian`),
                 fotoPemohon: null,
                 alamatPerusahaan: null,
-                lokasiPerbenihan: `Lahan Pertanian Desa Contoh ${index + 1}`,
+                lokasiPerbenihan: CryptoUtil.encrypt(`Lahan Pertanian Desa Contoh ${index + 1}`),
                 nikKuasa: null,
                 namaKuasa: null,
                 fotoKuasa: null,
@@ -52,17 +55,17 @@ export = {
             profileApplicantsData.push({
                 id: uuidv4(),
                 userId: user.id,
-                nik: `331234567890789${index}`,
-                npwp: `98765432100000${index}`,
-                email: `perusahaan${index + 1}@company.com`,
-                namaPemohon: `PT Pertanian ${index + 1}`,
-                telepon: `08345678901${index}`,
-                alamatPemohon: `Jl. Industri No. ${index + 1}, Jakarta`,
+                nik: CryptoUtil.encrypt(`331234567890789${index}`),
+                npwp: CryptoUtil.encrypt(`98765432100000${index}`),
+                email: CryptoUtil.encrypt(`perusahaan${index + 1}@company.com`),
+                namaPemohon: CryptoUtil.encrypt(`PT Pertanian ${index + 1}`),
+                telepon: CryptoUtil.encrypt(`08345678901${index}`),
+                alamatPemohon: CryptoUtil.encrypt(`Jl. Industri No. ${index + 1}, Jakarta`),
                 fotoPemohon: null,
-                alamatPerusahaan: `Kawasan Industri Blok ${String.fromCharCode(65 + index)}`,
-                lokasiPerbenihan: `Fasilitas Perbenihan PT Pertanian ${index + 1}`,
-                nikKuasa: `331987654321012${index}`,
-                namaKuasa: `Kuasa Hukum ${index + 1}`,
+                alamatPerusahaan: CryptoUtil.encrypt(`Kawasan Industri Blok ${String.fromCharCode(65 + index)}`),
+                lokasiPerbenihan: CryptoUtil.encrypt(`Fasilitas Perbenihan PT Pertanian ${index + 1}`),
+                nikKuasa: CryptoUtil.encrypt(`331987654321012${index}`),
+                namaKuasa: CryptoUtil.encrypt(`Kuasa Hukum ${index + 1}`),
                 fotoKuasa: null,
                 fileAktaPendirian: null,
                 fileKtp: null,

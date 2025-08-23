@@ -1,5 +1,7 @@
 import { QueryInterface, QueryTypes } from 'sequelize';
 import { v4 as uuidv4 } from 'uuid';
+import { User } from '../models/User.model';
+import { CryptoUtil } from '../utils/crypto.util';
 
 export = {
     up: async (queryInterface: QueryInterface) => {
@@ -16,17 +18,19 @@ export = {
             return;
         }
 
+        console.log('🔐 Encrypting profile data before seeding...');
+
         const profilesData = users.map((user, index) => ({
             id: uuidv4(),
             userId: user.id,
-            nip: `NIP${String(index + 1).padStart(6, '0')}`,
-            nik: `331234567890123${index}`,
-            nama: `Pegawai Internal ${index + 1}`,
-            jabatan: index === 0 ? 'Kepala Dinas' : index === 1 ? 'Sekretaris' : 'Staff Teknis',
-            telepon: `08123456789${index}`,
-            alamat: `Jl. Contoh No. ${index + 1}, Jakarta`,
-            golongan: index === 0 ? 'IV/a' : index === 1 ? 'III/d' : 'III/a',
-            pangkat: index === 0 ? 'Pembina' : index === 1 ? 'Penata Tk. I' : 'Penata',
+            nip: CryptoUtil.encrypt(`NIP${String(index + 1).padStart(6, '0')}`),
+            nik: CryptoUtil.encrypt(`331234567890123${index}`),
+            nama: CryptoUtil.encrypt(`Pegawai Internal ${index + 1}`),
+            jabatan: CryptoUtil.encrypt(index === 0 ? 'Kepala Dinas' : index === 1 ? 'Sekretaris' : 'Staff Teknis'),
+            telepon: CryptoUtil.encrypt(`08123456789${index}`),
+            alamat: CryptoUtil.encrypt(`Jl. Contoh No. ${index + 1}, Jakarta`),
+            golongan: CryptoUtil.encrypt(index === 0 ? 'IV/a' : index === 1 ? 'III/d' : 'III/a'),
+            pangkat: CryptoUtil.encrypt(index === 0 ? 'Pembina' : index === 1 ? 'Penata Tk. I' : 'Penata'),
             fotoUrl: null,
             createdAt: new Date(),
             updatedAt: new Date(),
