@@ -3,6 +3,7 @@ import { Role } from './Role.model';
 import { Menu } from './Menu.model';
 import { Profile } from './Profile.model';
 import { ProfileApplicant } from './ProfileApplicant.model';
+import { TempUser } from './TempUser.model';
 import sequelize from '../config/sequelize';
 
 // Models will be initialized when imported by sequelize

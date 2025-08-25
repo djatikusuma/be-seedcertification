@@ -4,60 +4,74 @@ import { JwtPayloadInterface, AuthenticatedRequest } from '../interfaces/auth.in
 
 /**
  * Authentication middleware to verify JWT tokens
+ * @param allowedRoles - Optional array of roles allowed to access the route
  */
-export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        // Get token from Authorization header
-        const authHeader = req.headers.authorization;
+export const authMiddleware = (allowedRoles?: string[]) => {
+    return async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            // Get token from Authorization header
+            const authHeader = req.headers.authorization;
 
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({
+            if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                return res.status(401).json({
+                    status: 'error',
+                    message: 'Unauthorized - No token provided'
+                });
+            }
+
+            // Extract the token
+            const token = authHeader.split(' ')[1];
+
+            // Verify the token
+            const authService = new AuthService();
+            const decodedToken = await authService.verifyToken(token);
+
+            if (!decodedToken) {
+                return res.status(401).json({
+                    status: 'error',
+                    message: 'Unauthorized - Invalid token'
+                });
+            }
+
+            // Get full user data with role information for masking purposes
+            const { User } = await import('../models/User.model');
+            const fullUser = await User.findByPk(decodedToken.id, {
+                include: ['role']
+            });
+
+            if (!fullUser) {
+                return res.status(401).json({
+                    status: 'error',
+                    message: 'Unauthorized - User not found'
+                });
+            }
+
+            // Add both the JWT payload and full user data to the request
+            (req as AuthenticatedRequest).user = {
+                ...decodedToken,
+                role: fullUser.role?.roleName || 'user' // Provide default role
+            };
+
+            // Check role-based access if roles are specified
+            if (allowedRoles && allowedRoles.length > 0) {
+                const userRole = fullUser.role?.roleName;
+                if (!userRole || !allowedRoles.includes(userRole)) {
+                    return res.status(403).json({
+                        status: 'error',
+                        message: 'Forbidden - Insufficient permissions'
+                    });
+                }
+            }
+
+            next();
+        } catch (error) {
+            console.error('Authentication error:', error);
+            return res.status(500).json({
                 status: 'error',
-                message: 'Unauthorized - No token provided'
+                message: 'Internal server error'
             });
         }
-
-        // Extract the token
-        const token = authHeader.split(' ')[1];
-
-        // Verify the token
-        const authService = new AuthService();
-        const decodedToken = await authService.verifyToken(token);
-
-        if (!decodedToken) {
-            return res.status(401).json({
-                status: 'error',
-                message: 'Unauthorized - Invalid token'
-            });
-        }
-
-        // Get full user data with role information for masking purposes
-        const { User } = await import('../models/User.model');
-        const fullUser = await User.findByPk(decodedToken.id, {
-            include: ['role']
-        });
-
-        if (!fullUser) {
-            return res.status(401).json({
-                status: 'error',
-                message: 'Unauthorized - User not found'
-            });
-        }
-
-        // Add both the JWT payload and full user data to the request
-        (req as AuthenticatedRequest).user = {
-            ...decodedToken,
-            role: fullUser.role
-        };
-
-        next();
-    } catch (error) {
-        console.error('Authentication error:', error);
-        return res.status(500).json({
-            status: 'error',
-            message: 'Internal server error'
-        });
-    }
+    };
 };
 
 /**

@@ -14,6 +14,24 @@ export interface UserInterface extends BaseEntityInterface {
     deletionRequestDate?: Date;
 }
 
+export interface TempUserInterface extends BaseEntityInterface {
+    userType: 'perusahaan' | 'perorangan';
+    nik: string;
+    nikHash?: string; // Added for encrypted NIK searching
+    namaPemohon: string;
+    email: string;
+    emailHash?: string; // Added for encrypted email searching
+    telepon?: string;
+    npwp?: string;
+    alamatPemohon?: string;
+    password: string;
+    verificationStatus: 'pending' | 'approved' | 'rejected';
+    verificationNotes?: string;
+    verifiedBy?: string;
+    verifiedAt?: Date;
+    deletedAt?: Date;
+}
+
 export interface RoleInterface extends BaseEntityInterface {
     roleName: string;
 }

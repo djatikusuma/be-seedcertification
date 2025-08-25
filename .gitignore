@@ -8,6 +8,8 @@ yarn-error.log
 dist/
 build/
 
+todos/
+
 # Environment variables
 .env
 .env.local
