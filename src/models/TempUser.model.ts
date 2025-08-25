@@ -6,7 +6,7 @@ import { Op } from 'sequelize';
 
 export enum UserType {
     PERUSAHAAN = 'perusahaan',
-    PERORANGAN = 'perorangan'
+    PERORANGAN = 'petani'
 }
 
 export enum VerificationStatus {
@@ -150,6 +150,11 @@ export class TempUser extends Model<TempUserInterface> implements TempUserInterf
         }
     }
 
+    // Public method to manually decrypt temp user data
+    static manualDecrypt(instance: TempUser): void {
+        TempUser.decryptSensitiveFields(instance);
+    }
+
     // Method to encrypt sensitive fields
     private static encryptSensitiveFields(instance: TempUser) {
         TempUser.ENCRYPTED_FIELDS.forEach(field => {
@@ -186,8 +191,13 @@ export class TempUser extends Model<TempUserInterface> implements TempUserInterf
 
     // Helper method to check if a value is already encrypted
     private static isAlreadyEncrypted(value: string): boolean {
-        // Check if the value follows the encrypted format: "encrypted:iv:salt" or starts with "{"
-        return value.startsWith('encrypted:') || value.startsWith('{');
+        // Check if the value follows the encrypted format: "encrypted:iv:salt"
+        // Split by ':' and check if we have exactly 3 parts
+        const parts = value.split(':');
+        return parts.length === 3 &&
+            parts[0].length > 0 && // encrypted part
+            parts[1].length > 0 && // iv part
+            parts[2].length > 0;   // salt part
     }
 
     // Method to get masked data based on user role

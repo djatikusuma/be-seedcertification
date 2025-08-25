@@ -9,7 +9,7 @@ export = {
         const tempUsers = [
             {
                 id: uuidv4(),
-                userType: 'perorangan',
+                userType: 'petani',
                 nik: CryptoUtil.encrypt('1234567890123456'),
                 nikHash: CryptoUtil.hash('1234567890123456'),
                 namaPemohon: CryptoUtil.encrypt('John Doe'),
@@ -41,7 +41,7 @@ export = {
             },
             {
                 id: uuidv4(),
-                userType: 'perorangan',
+                userType: 'petani',
                 nik: CryptoUtil.encrypt('1111222233334444'),
                 nikHash: CryptoUtil.hash('1111222233334444'),
                 namaPemohon: CryptoUtil.encrypt('Bob Wilson'),

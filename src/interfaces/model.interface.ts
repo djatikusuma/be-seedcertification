@@ -15,7 +15,7 @@ export interface UserInterface extends BaseEntityInterface {
 }
 
 export interface TempUserInterface extends BaseEntityInterface {
-    userType: 'perusahaan' | 'perorangan';
+    userType: 'perusahaan' | 'petani';
     nik: string;
     nikHash?: string; // Added for encrypted NIK searching
     namaPemohon: string;

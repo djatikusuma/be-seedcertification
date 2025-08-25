@@ -8,6 +8,7 @@ import internalProfileRoutes from './internalProfile.routes';
 import applicantProfileRoutes from './applicantProfile.routes';
 import settingsRoutes from './settings.routes';
 import registrationRoutes from './registration.routes';
+import tempUserRoutes from './tempUser.routes';
 
 const router = Router();
 
@@ -19,6 +20,7 @@ router.get('/health', (req, res) => {
 // Register all routes
 router.use('/auth', authRoutes);
 router.use('/', registrationRoutes); // Registration routes (public and protected)
+router.use('/temp-users', tempUserRoutes);
 router.use('/profile', profileRoutes);
 router.use('/internal-profiles', internalProfileRoutes);
 router.use('/applicant-profiles', applicantProfileRoutes);

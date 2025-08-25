@@ -10,7 +10,7 @@ export = {
                 allowNull: false,
             },
             userType: {
-                type: DataTypes.ENUM('perusahaan', 'perorangan'),
+                type: DataTypes.ENUM('perusahaan', 'petani'),
                 allowNull: false,
             },
             nik: {

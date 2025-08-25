@@ -4,6 +4,7 @@ import { TempUserRepository } from '../repositories/tempUser.repository';
 import { TempUserInterface } from '../interfaces/model.interface';
 import { UserRepository } from '../repositories/user.repository';
 import { RoleRepository } from '../repositories/role.repository';
+import { ProfileApplicantRepository } from '../repositories/profileApplicant.repository';
 import { CryptoUtil } from '../utils/crypto.util';
 import * as bcrypt from 'bcryptjs';
 
@@ -27,6 +28,7 @@ export class TempUserService extends BaseService<TempUser> {
     private tempUserRepository: TempUserRepository;
     private userRepository: UserRepository;
     private roleRepository: RoleRepository;
+    private profileApplicantRepository: ProfileApplicantRepository;
 
     constructor() {
         const tempUserRepository = new TempUserRepository();
@@ -34,6 +36,7 @@ export class TempUserService extends BaseService<TempUser> {
         this.tempUserRepository = tempUserRepository;
         this.userRepository = new UserRepository();
         this.roleRepository = new RoleRepository();
+        this.profileApplicantRepository = new ProfileApplicantRepository();
     }
 
     // Register new temp user
@@ -104,7 +107,14 @@ export class TempUserService extends BaseService<TempUser> {
         totalPages: number;
         currentPage: number;
     }> {
-        return await this.tempUserRepository.getPendingRegistrations(page, limit);
+        const result = await this.tempUserRepository.getPendingRegistrations(page, limit);
+
+        // Ensure all data is properly decrypted
+        result.data.forEach(tempUser => {
+            TempUser.manualDecrypt(tempUser);
+        });
+
+        return result;
     }
 
     // Get pending registrations with masking for admin/verifikatur
@@ -120,9 +130,12 @@ export class TempUserService extends BaseService<TempUser> {
     }> {
         const result = await this.tempUserRepository.getPendingRegistrations(page, limit);
 
-        const maskedData = result.data.map(tempUser =>
-            TempUser.getMaskedTempUser(tempUser, viewerRole)
-        );
+        // Ensure data is decrypted (AfterFind hook should handle this, but let's be explicit)
+        const maskedData = result.data.map(tempUser => {
+            // Force decryption for each temp user before masking
+            TempUser.manualDecrypt(tempUser);
+            return TempUser.getMaskedTempUser(tempUser, viewerRole);
+        });
 
         return {
             ...result,
@@ -149,9 +162,12 @@ export class TempUserService extends BaseService<TempUser> {
     }> {
         const result = await this.tempUserRepository.getTempUsersWithFilter(filters, page, limit);
 
-        const maskedData = result.data.map(tempUser =>
-            TempUser.getMaskedTempUser(tempUser, viewerRole)
-        );
+        // Ensure data is decrypted and then apply masking based on role
+        const maskedData = result.data.map(tempUser => {
+            // Force decryption for each temp user before masking
+            TempUser.manualDecrypt(tempUser);
+            return TempUser.getMaskedTempUser(tempUser, viewerRole);
+        });
 
         return {
             ...result,
@@ -177,6 +193,9 @@ export class TempUserService extends BaseService<TempUser> {
                     message: 'Data registrasi tidak ditemukan'
                 };
             }
+
+            // Ensure temp user data is decrypted for verification processing
+            TempUser.manualDecrypt(tempUser);
 
             if (tempUser.verificationStatus !== VerificationStatus.PENDING) {
                 return {
@@ -254,24 +273,26 @@ export class TempUserService extends BaseService<TempUser> {
                 roleId: defaultRole.id
             });
 
-            // Create profile or profile applicant based on user type
-            if (tempUser.userType === UserType.PERORANGAN) {
-                // Create profile for individual users
-                // You might want to create ProfileRepository and create profile here
-                // For now, we'll just return success
-            } else if (tempUser.userType === UserType.PERUSAHAAN) {
-                // Create profile applicant for company users
-                // You might want to create ProfileApplicantRepository and create profile here
-                // For now, we'll just return success
-            }
+            // Create profile applicant with all temp user data
+            const profileApplicant = await this.profileApplicantRepository.create({
+                userId: newUser.id,
+                nik: tempUser.nik,
+                npwp: tempUser.npwp || undefined,
+                email: tempUser.email,
+                namaPemohon: tempUser.namaPemohon,
+                telepon: tempUser.telepon || undefined,
+                alamatPemohon: tempUser.alamatPemohon || undefined
+            });
 
             return {
                 success: true,
-                message: 'Akun user berhasil dibuat',
+                message: 'Akun user dan profile applicant berhasil dibuat',
                 data: {
                     userId: newUser.id,
                     email: newUser.email,
-                    name: newUser.name
+                    name: newUser.name,
+                    profileApplicantId: profileApplicant.id,
+                    userType: tempUser.userType
                 }
             };
 
@@ -279,7 +300,7 @@ export class TempUserService extends BaseService<TempUser> {
             console.error('Error creating user from temp user:', error);
             return {
                 success: false,
-                message: 'Gagal membuat akun user'
+                message: 'Gagal membuat akun user dan profile applicant'
             };
         }
     }
@@ -312,6 +333,8 @@ export class TempUserService extends BaseService<TempUser> {
                 };
             }
 
+            // Ensure data is decrypted before masking
+            TempUser.manualDecrypt(tempUser);
             const maskedData = TempUser.getMaskedTempUser(tempUser, viewerRole);
 
             return {
