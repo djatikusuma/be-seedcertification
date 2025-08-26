@@ -1,7 +1,7 @@
 import { Sequelize } from 'sequelize-typescript';
 import dotenv from 'dotenv';
 import config from './database.config';
-import path from 'path';
+import { User, Role, Menu, Profile, ProfileApplicant, TempUser, AuditTrail, Settings } from '../models';
 
 dotenv.config();
 
@@ -15,8 +15,20 @@ const sequelize = new Sequelize({
     password: dbConfig.password,
     database: dbConfig.database,
     port: dbConfig.port,
-    logging: false,
-    models: [path.join(__dirname, '..', 'models', '*.model.ts')],
+    logging: console.log, // Enable logging to see what queries are slow
+    pool: {
+        max: 10,
+        min: 0,
+        acquire: 30000,
+        idle: 10000
+    },
+    dialectOptions: {
+        connectTimeout: 10000,
+        acquireTimeout: 10000,
+    }
 });
+
+// Add models to the Sequelize instance
+sequelize.addModels([User, Role, Menu, Profile, ProfileApplicant, TempUser, AuditTrail, Settings]);
 
 export default sequelize;

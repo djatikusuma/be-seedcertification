@@ -6,7 +6,7 @@ const router = Router();
 const applicantProfileController = new ApplicantProfileController();
 
 // Apply authentication middleware to all routes
-router.use(authMiddleware);
+router.use(authMiddleware());
 
 // User routes (for managing own applicant profile)
 router.get('/my-profile', applicantProfileController.getMyProfile.bind(applicantProfileController));

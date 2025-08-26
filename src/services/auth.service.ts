@@ -76,15 +76,9 @@ export class AuthService {
      */
     async verifyToken(token: string): Promise<JwtPayloadInterface | null> {
         try {
-            // Try to get settings-based configuration
-            let secret: Secret;
-            try {
-                const config = await getJwtConfig();
-                secret = config.secret as Secret;
-            } catch (error) {
-                console.warn('Failed to load JWT settings for verification, falling back to environment variables:', error);
-                secret = jwtConfig.secret as Secret;
-            }
+            // Use environment variables for JWT verification to avoid database calls during auth
+            // This prevents hanging requests when database is slow
+            const secret = jwtConfig.secret as Secret;
 
             const decoded = jwt.verify(token, secret) as JwtPayloadInterface;
             return decoded;

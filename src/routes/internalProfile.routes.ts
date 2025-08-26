@@ -6,7 +6,7 @@ const router = Router();
 const internalProfileController = new InternalProfileController();
 
 // Apply authentication middleware to all routes
-router.use(authMiddleware);
+router.use(authMiddleware());
 
 // User routes (for managing own internal profile)
 router.get('/my-profile', internalProfileController.getMyProfile.bind(internalProfileController));

@@ -3,10 +3,18 @@ import { SettingsService } from '../services/settings.service';
 
 dotenv.config();
 
+// Cache for JWT config to avoid repeated database calls
+let cachedJwtConfig: { secret: string; expiresIn: string } | null = null;
+
 /**
  * Get JWT configuration from settings service with fallback to environment variables
  */
 export const getJwtConfig = async () => {
+    // Return cached config if available
+    if (cachedJwtConfig) {
+        return cachedJwtConfig;
+    }
+
     const settingsService = new SettingsService();
 
     // Try to get values from settings
@@ -33,13 +41,16 @@ export const getJwtConfig = async () => {
         expiresIn = process.env.JWT_EXPIRES_IN || '24h';
     }
 
-    return {
+    // Cache the config
+    cachedJwtConfig = {
         secret,
         expiresIn
     };
+
+    return cachedJwtConfig;
 };
 
-// Legacy synchronous config for backwards compatibility
+// Legacy synchronous config for backwards compatibility - use environment variables only
 export const jwtConfig = {
     secret: process.env.JWT_SECRET || 'default_jwt_secret',
     expiresIn: process.env.JWT_EXPIRES_IN || '24h'

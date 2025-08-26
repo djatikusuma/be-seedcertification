@@ -1,8 +1,9 @@
 import { Router } from 'express';
-import settingsController from '../controllers/settings.controller';
+import SettingsController from '../controllers/settings.controller';
 import { authMiddleware, rbacMiddleware } from '../middleware/auth.middleware';
 
 const router = Router();
+const settingsController = new SettingsController();
 
 /**
  * @swagger
@@ -38,7 +39,7 @@ const router = Router();
  *       500:
  *         description: Server error
  */
-router.get('/', authMiddleware, settingsController.getAllSettings);
+router.get('/', authMiddleware(), settingsController.getAllSettings);
 
 /**
  * @swagger
@@ -77,6 +78,6 @@ router.get('/', authMiddleware, settingsController.getAllSettings);
  *       500:
  *         description: Server error
  */
-router.put('/', authMiddleware, rbacMiddleware(['admin']), settingsController.updateSettings);
+router.put('/', authMiddleware(), rbacMiddleware(['admin']), settingsController.updateSettings);
 
 export default router;

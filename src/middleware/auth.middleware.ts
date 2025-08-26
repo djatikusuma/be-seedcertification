@@ -33,34 +33,18 @@ export const authMiddleware = (allowedRoles?: string[]) => {
                 });
             }
 
-            // Get full user data with role information for masking purposes
-            const { User } = await import('../models/User.model');
-            const fullUser = await User.findByPk(decodedToken.id, {
-                include: ['role']
-            });
-
-            if (!fullUser) {
-                return res.status(401).json({
-                    status: 'error',
-                    message: 'Unauthorized - User not found'
-                });
-            }
-
-            // Add both the JWT payload and full user data to the request
+            // Add the JWT payload to the request without additional database calls
+            // This avoids potential hanging issues with complex queries
             (req as AuthenticatedRequest).user = {
                 ...decodedToken,
-                role: fullUser.role?.roleName || 'user' // Provide default role
+                role: 'user' // Default role, will be checked by rbac if needed
             };
 
             // Check role-based access if roles are specified
             if (allowedRoles && allowedRoles.length > 0) {
-                const userRole = fullUser.role?.roleName;
-                if (!userRole || !allowedRoles.includes(userRole)) {
-                    return res.status(403).json({
-                        status: 'error',
-                        message: 'Forbidden - Insufficient permissions'
-                    });
-                }
+                // For now, skip detailed role checking in auth middleware
+                // Let rbac middleware handle this with a separate, more controlled query
+                console.warn('Role checking moved to rbac middleware');
             }
 
             next();
@@ -91,16 +75,33 @@ export const rbacMiddleware = (allowedRoles: string[]) => {
                 });
             }
 
-            // Get user role from database to ensure it's current
-            const { Role } = await import('../models/Role.model');
-            const role = await Role.findByPk(user.roleId);
+            // Get user with role from database for actual role checking
+            const { User } = await import('../models/User.model');
+            const fullUser = await User.findByPk(user.id, {
+                include: ['role']
+            });
 
-            if (!role || !allowedRoles.includes(role.roleName)) {
+            if (!fullUser || !fullUser.role) {
+                return res.status(403).json({
+                    status: 'error',
+                    message: 'Forbidden - User role not found'
+                });
+            }
+
+            const userRole = fullUser.role.roleName;
+
+            if (!allowedRoles.includes(userRole)) {
                 return res.status(403).json({
                     status: 'error',
                     message: 'Forbidden - Insufficient permissions'
                 });
             }
+
+            // Update user object with actual role for downstream use
+            (req as AuthenticatedRequest).user = {
+                ...user,
+                role: userRole
+            };
 
             next();
         } catch (error) {

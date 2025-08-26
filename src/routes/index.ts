@@ -9,6 +9,8 @@ import applicantProfileRoutes from './applicantProfile.routes';
 import settingsRoutes from './settings.routes';
 import registrationRoutes from './registration.routes';
 import tempUserRoutes from './tempUser.routes';
+import auditTrailRoutes from './auditTrail.routes';
+import { auditLog, loginAudit } from '../middleware/auditLog.middleware';
 
 const router = Router();
 
@@ -18,15 +20,16 @@ router.get('/health', (req, res) => {
 });
 
 // Register all routes
-router.use('/auth', authRoutes);
-router.use('/', registrationRoutes); // Registration routes (public and protected)
-router.use('/temp-users', tempUserRoutes);
-router.use('/profile', profileRoutes);
-router.use('/internal-profiles', internalProfileRoutes);
-router.use('/applicant-profiles', applicantProfileRoutes);
-router.use('/users', userRoutes);
-router.use('/roles', roleRoutes);
-router.use('/menus', menuRoutes);
-router.use('/settings', settingsRoutes);
+router.use('/auth', loginAudit(), authRoutes);
+router.use('/', auditLog(), registrationRoutes); // Registration routes (public and protected)
+router.use('/temp-users', auditLog(), tempUserRoutes);
+router.use('/audit-trails', auditLog(), auditTrailRoutes);
+router.use('/profile', auditLog(), profileRoutes);
+router.use('/internal-profiles', auditLog(), internalProfileRoutes);
+router.use('/applicant-profiles', auditLog(), applicantProfileRoutes);
+router.use('/users', auditLog(), userRoutes);
+router.use('/roles', auditLog(), roleRoutes);
+router.use('/menus', auditLog(), menuRoutes);
+router.use('/settings', auditLog(), settingsRoutes);
 
 export default router;

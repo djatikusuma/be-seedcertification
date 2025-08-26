@@ -6,7 +6,7 @@ const router = Router();
 const userController = new UserController();
 
 // Protect all user management routes with authentication and admin role check
-router.use(authMiddleware, rbacMiddleware(['admin']));
+router.use(authMiddleware(), rbacMiddleware(['admin']));
 
 // CRUD operations for users (admin only)
 router.get('/', userController.getAllUsers);

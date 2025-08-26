@@ -1,35 +1,24 @@
 import swaggerJsdoc from 'swagger-jsdoc';
-import { SettingsService } from '../services/settings.service';
 
 /**
  * Configure Swagger documentation options
  */
 const getSwaggerOptions = async () => {
-    // Get app metadata from settings
-    const settingsService = new SettingsService();
-    const appName = await settingsService.getSetting('appName') || 'Express TypeScript API';
-    const appMetaDataStr = await settingsService.getSetting('appMetaData');
-
-    let appMetaData = {};
-    try {
-        if (typeof appMetaDataStr === 'object') {
-            appMetaData = appMetaDataStr;
-        } else if (typeof appMetaDataStr === 'string') {
-            appMetaData = JSON.parse(appMetaDataStr);
-        }
-    } catch (error) {
-        console.warn('Failed to parse appMetaData from settings:', error);
-    }
+    // Use environment variables and defaults instead of database calls during startup
+    // This avoids blocking the application startup with database queries
+    const appName = process.env.APP_NAME || 'Express TypeScript API';
+    const appVersion = process.env.APP_VERSION || '1.0.0';
+    const appDescription = process.env.APP_DESCRIPTION || 'Express TypeScript API with MySQL/PostgreSQL support';
 
     const options: swaggerJsdoc.Options = {
         definition: {
             openapi: '3.0.0',
             info: {
                 title: appName,
-                version: (appMetaData as any)?.version || '1.0.0',
-                description: (appMetaData as any)?.description || 'Express TypeScript API with MySQL/PostgreSQL support',
-                contact: (appMetaData as any)?.contact || {
-                    email: 'admin@example.com'
+                version: appVersion,
+                description: appDescription,
+                contact: {
+                    email: process.env.CONTACT_EMAIL || 'admin@example.com'
                 },
             },
             tags: [

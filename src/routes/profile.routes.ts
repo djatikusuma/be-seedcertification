@@ -1,11 +1,12 @@
 import { Router } from 'express';
-import profileController from '../controllers/profile.controller';
+import ProfileController from '../controllers/profile.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
 
 const router = Router();
+const profileController = new ProfileController();
 
 // Protect all profile routes with authentication
-router.use(authMiddleware);
+router.use(authMiddleware());
 
 /**
  * @route   GET /api/profile

@@ -8,6 +8,8 @@ import routes from './routes';
 import generateSwaggerSpec from './config/swagger.config';
 // Import models to ensure they are registered
 import './models';
+// Explicitly import all models to ensure registration
+import { User, Role, Menu, Profile, ProfileApplicant, TempUser, AuditTrail, Settings } from './models';
 
 // Load environment variables
 dotenv.config();
@@ -21,6 +23,19 @@ app.use(cors());
 app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Add request logging middleware
+app.use((req: Request, res: Response, next: NextFunction) => {
+    const startTime = Date.now();
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} - Started`);
+
+    res.on('finish', () => {
+        const duration = Date.now() - startTime;
+        console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} - ${res.statusCode} (${duration}ms)`);
+    });
+
+    next();
+});
 
 // Routes
 app.use('/api', routes);
@@ -51,6 +66,13 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 // Database connection and server startup
 const startServer = async () => {
     try {
+        // Force model registration
+        console.log('Registering models...');
+        const models = [User, Role, Menu, Profile, ProfileApplicant, TempUser, AuditTrail, Settings];
+        models.forEach(model => {
+            console.log(`Model ${model.name} registered:`, !!sequelize.models[model.name]);
+        });
+
         await sequelize.authenticate();
         console.log('Database connection has been established successfully.');
 
