@@ -5,6 +5,17 @@ import { CryptoUtil } from '../utils/crypto.util';
 
 export = {
     up: async (queryInterface: QueryInterface) => {
+        // Check if data already exist
+        const existingdb = await queryInterface.sequelize.query(
+            'SELECT COUNT(*) as count FROM profiles',
+            { type: QueryTypes.SELECT }
+        ) as any[];
+
+        if (existingdb[0].count > 0) {
+            console.log('Data already exist...');
+            return;
+        }
+
         // Get some existing user IDs from the user table
         const users = await queryInterface.sequelize.query(
             `SELECT id, roleId FROM users WHERE roleId IN (

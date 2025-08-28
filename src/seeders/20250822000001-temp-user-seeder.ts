@@ -1,10 +1,21 @@
-import { QueryInterface } from 'sequelize';
+import { QueryInterface, QueryTypes } from 'sequelize';
 import { v4 as uuidv4 } from 'uuid';
 import * as bcrypt from 'bcryptjs';
 import { CryptoUtil } from '../utils/crypto.util';
 
 export = {
     up: async (queryInterface: QueryInterface) => {
+        // Check if data already exist
+        const existingdb = await queryInterface.sequelize.query(
+            'SELECT COUNT(*) as count FROM temp_users',
+            { type: QueryTypes.SELECT }
+        ) as any[];
+
+        if (existingdb[0].count > 0) {
+            console.log('Data already exist...');
+            return;
+        }
+
         // Create some sample temp users for testing
         const tempUsers = [
             {

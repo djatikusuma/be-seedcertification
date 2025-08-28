@@ -1,8 +1,19 @@
-import { QueryInterface } from 'sequelize';
+import { QueryInterface, QueryTypes } from 'sequelize';
 import { v4 as uuidv4 } from 'uuid';
 
 export default {
     up: async (queryInterface: QueryInterface): Promise<void> => {
+        // Check if data already exist
+        const existingdb = await queryInterface.sequelize.query(
+            'SELECT COUNT(*) as count FROM settings',
+            { type: QueryTypes.SELECT }
+        ) as any[];
+
+        if (existingdb[0].count > 0) {
+            console.log('Data already exist...');
+            return;
+        }
+
         const now = new Date();
         const defaultSettings = [
             {

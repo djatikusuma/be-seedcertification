@@ -21,6 +21,19 @@ const getRoles = async (queryInterface: QueryInterface) => {
 
 export = {
     up: async (queryInterface: QueryInterface) => {
+        // Check if users already exist
+        const existingUsers = await queryInterface.sequelize.query(
+            'SELECT COUNT(*) as count FROM users',
+            { type: QueryTypes.SELECT }
+        ) as any[];
+
+        if (existingUsers[0].count > 0) {
+            console.log('Users already exist, skipping user seeder...');
+            return;
+        }
+
+        console.log('Creating users...');
+
         // Get role IDs
         const roles = await getRoles(queryInterface);
 

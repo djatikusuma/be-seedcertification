@@ -10,6 +10,7 @@ import settingsRoutes from './settings.routes';
 import registrationRoutes from './registration.routes';
 import tempUserRoutes from './tempUser.routes';
 import auditTrailRoutes from './auditTrail.routes';
+import commodityRoutes from './commodity.routes';
 import { auditLog, loginAudit } from '../middleware/auditLog.middleware';
 
 const router = Router();
@@ -31,5 +32,6 @@ router.use('/users', auditLog(), userRoutes);
 router.use('/roles', auditLog(), roleRoutes);
 router.use('/menus', auditLog(), menuRoutes);
 router.use('/settings', auditLog(), settingsRoutes);
+router.use('/commodities', auditLog(), commodityRoutes);
 
 export default router;
