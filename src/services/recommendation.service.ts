@@ -4,6 +4,7 @@ import { RecommendationRepository, RecommendationFilterOptions } from '../reposi
 import { ProfileApplicant } from '../models/ProfileApplicant.model';
 import { User } from '../models/User.model';
 import { Role } from '../models/Role.model';
+import { CryptoUtil } from '../utils/crypto.util';
 
 export interface CreateRecommendationDto {
     pemohon_id: string;
@@ -46,7 +47,79 @@ export class RecommendationService extends BaseService<Recommendation> {
         this.recommendationRepository = recommendationRepository;
     }
 
-    async createRecommendation(data: CreateRecommendationDto): Promise<Recommendation> {
+    /**
+     * Decrypt sensitive data from ProfileApplicant
+     * @param profileApplicant - ProfileApplicant instance with potentially encrypted data
+     * @returns ProfileApplicant with decrypted sensitive fields
+     */
+    private decryptProfileApplicantData(profileApplicant: ProfileApplicant): ProfileApplicant {
+        if (!profileApplicant) return profileApplicant;
+
+        try {
+            // Fields that should be decrypted
+            const fieldsToDecrypt = ['nik', 'npwp', 'email', 'namaPemohon', 'telepon', 'alamatPemohon', 'alamatPerusahaan', 'nikKuasa', 'namaKuasa'];
+
+            // Create a plain object from the model instance
+            const decryptedData: any = profileApplicant.toJSON();
+
+            // Decrypt each sensitive field
+            for (const field of fieldsToDecrypt) {
+                if (decryptedData[field] && typeof decryptedData[field] === 'string') {
+                    try {
+                        // Check if the field is encrypted (contains colons indicating encrypted format)
+                        if (decryptedData[field].includes(':') && decryptedData[field].split(':').length === 3) {
+                            decryptedData[field] = CryptoUtil.decrypt(decryptedData[field]);
+                        }
+                        // If not encrypted, leave as is (might be plain text or already decrypted)
+                    } catch (error) {
+                        console.warn(`Failed to decrypt field ${field} for ProfileApplicant ${profileApplicant.id}:`, (error as Error).message);
+                        // Keep original value if decryption fails
+                    }
+                }
+            }
+
+            // Return the ProfileApplicant instance with decrypted data
+            const result = ProfileApplicant.build(decryptedData);
+            result.isNewRecord = false;
+            return result;
+        } catch (error) {
+            console.warn(`Failed to decrypt ProfileApplicant data for ${profileApplicant.id}:`, (error as Error).message);
+            return profileApplicant;
+        }
+    }
+
+    /**
+     * Process recommendation data and decrypt pemohon information
+     * @param recommendation - Recommendation instance
+     * @returns Recommendation with decrypted pemohon data
+     */
+    private processRecommendationData(recommendation: Recommendation): any {
+        if (!recommendation) return recommendation;
+
+        try {
+            // Create a copy of the recommendation data
+            const processedData: any = recommendation.toJSON();
+
+            // Debug: Check if pemohon data exists
+            console.log('Processing recommendation:', processedData.id);
+            console.log('Pemohon data exists:', !!processedData.pemohon);
+
+            // If pemohon data is included, decrypt it
+            if (processedData.pemohon) {
+                console.log('Decrypting pemohon data for:', processedData.pemohon.id);
+                const pemohonInstance = ProfileApplicant.build(processedData.pemohon);
+                pemohonInstance.isNewRecord = false;
+                processedData.pemohon = this.decryptProfileApplicantData(pemohonInstance).toJSON();
+                console.log('Decrypted pemohon name:', processedData.pemohon.namaPemohon);
+            }
+
+            // Return the processed data as plain object to maintain pemohon data
+            return processedData;
+        } catch (error) {
+            console.warn(`Failed to process recommendation data for ${recommendation.id}:`, (error as Error).message);
+            return recommendation.toJSON();
+        }
+    } async createRecommendation(data: CreateRecommendationDto): Promise<Recommendation> {
         // Verify that pemohon exists
         const pemohon = await ProfileApplicant.findByPk(data.pemohon_id);
         if (!pemohon) {
@@ -111,6 +184,7 @@ export class RecommendationService extends BaseService<Recommendation> {
                 };
 
             case 'inspektur':
+                console.log('Fetching recommendations for inspektur with includeApplicant=true');
                 result = await this.recommendationRepository.findAllWithFilters(
                     { ...filters, pemeriksa_contains: userId },
                     page,
@@ -118,15 +192,26 @@ export class RecommendationService extends BaseService<Recommendation> {
                     true,
                     false
                 );
+                console.log('Found recommendations:', result.rows.length);
+                console.log('First recommendation has pemohon:', !!(result.rows[0] && (result.rows[0] as any).pemohon));
 
-                // Transform data for inspektur
-                const inspekturRows = result.rows.map(rec => ({
-                    id: rec.id,
-                    pemohon: rec.pemohon,
-                    status: rec.status,
-                    status_text: rec.getStatusText(),
-                    created_at: rec.createdAt,
-                }));
+                // Transform data for inspektur with decrypted pemohon data
+                const inspekturRows = result.rows.map(rec => {
+                    const processedRec = this.processRecommendationData(rec);
+                    return {
+                        id: processedRec.id,
+                        pemohon: processedRec.pemohon ? {
+                            id: processedRec.pemohon.id,
+                            namaPemohon: processedRec.pemohon.namaPemohon,
+                            email: processedRec.pemohon.email,
+                            telepon: processedRec.pemohon.telepon,
+                            alamatPemohon: processedRec.pemohon.alamatPemohon,
+                        } : null,
+                        status: processedRec.status,
+                        status_text: rec.getStatusText(),
+                        created_at: processedRec.created_at,
+                    };
+                });
 
                 return {
                     rows: inspekturRows,
@@ -139,6 +224,7 @@ export class RecommendationService extends BaseService<Recommendation> {
             case 'inspektur_ketua':
             case 'kepala':
             case 'admin':
+                console.log('Fetching recommendations for admin/verifikatur with includeApplicant=true');
                 result = await this.recommendationRepository.findAllWithFilters(
                     filters,
                     page,
@@ -146,15 +232,27 @@ export class RecommendationService extends BaseService<Recommendation> {
                     true,
                     false
                 );
+                console.log('Found recommendations:', result.rows.length);
+                console.log('First recommendation has pemohon:', !!(result.rows[0] && (result.rows[0] as any).pemohon));
 
-                // Transform data for admin/verifikatur/etc
-                const adminRows = result.rows.map(rec => ({
-                    id: rec.id,
-                    pemohon: rec.pemohon,
-                    status: rec.status,
-                    status_text: rec.getStatusText(),
-                    created_at: rec.createdAt,
-                }));
+                // Transform data for admin/verifikatur/etc with decrypted pemohon data
+                const adminRows = result.rows.map(rec => {
+                    const processedRec = this.processRecommendationData(rec);
+                    return {
+                        id: processedRec.id,
+                        pemohon: processedRec.pemohon ? {
+                            id: processedRec.pemohon.id,
+                            namaPemohon: processedRec.pemohon.namaPemohon,
+                            email: processedRec.pemohon.email,
+                            telepon: processedRec.pemohon.telepon,
+                            alamatPemohon: processedRec.pemohon.alamatPemohon,
+                            nik: processedRec.pemohon.nik,
+                        } : null,
+                        status: processedRec.status,
+                        status_text: rec.getStatusText(),
+                        created_at: processedRec.created_at,
+                    };
+                });
 
                 return {
                     rows: adminRows,
@@ -168,8 +266,13 @@ export class RecommendationService extends BaseService<Recommendation> {
         }
     }
 
-    async getRecommendationById(id: string): Promise<Recommendation | null> {
-        return await this.recommendationRepository.findByIdWithDetails(id);
+    async getRecommendationById(id: string): Promise<any> {
+        const recommendation = await this.recommendationRepository.findByIdWithDetails(id);
+        if (!recommendation) {
+            return null;
+        }
+        // Process and decrypt the recommendation data
+        return this.processRecommendationData(recommendation);
     }
 
     async findProfileApplicantByUserId(userId: string): Promise<ProfileApplicant | null> {
