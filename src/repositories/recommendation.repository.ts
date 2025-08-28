@@ -3,7 +3,7 @@ import { Recommendation, RecommendationInterface } from '../models/Recommendatio
 import { ProfileApplicant } from '../models/ProfileApplicant.model';
 import { User } from '../models/User.model';
 import { Role } from '../models/Role.model';
-import { Op, WhereOptions, Includeable } from 'sequelize';
+import { Op, WhereOptions, Includeable, Sequelize } from 'sequelize';
 
 export interface RecommendationFilterOptions {
     status?: number;
@@ -36,13 +36,13 @@ export class RecommendationRepository extends BaseRepository<Recommendation> {
         }
 
         if (filters.pemeriksa_contains) {
-            // Search for inspector ID in JSON array using raw SQL
-            (where as any).pemeriksa = {
-                [Op.like]: `%"${filters.pemeriksa_contains}"%`,
-            };
-        }
+            // Search for inspector ID in JSON array using JSON_CONTAINS
+            console.log('Filtering recommendations by pemeriksa_contains:', filters.pemeriksa_contains);
 
-        if (includeApplicant) {
+            (where as any)[Op.and] = Sequelize.literal(`JSON_CONTAINS(pemeriksa, '"${filters.pemeriksa_contains}"')`);
+
+            console.log('Using JSON_CONTAINS query for pemeriksa');
+        } if (includeApplicant) {
             include.push({
                 model: ProfileApplicant,
                 as: 'pemohon',
