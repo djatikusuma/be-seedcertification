@@ -48,6 +48,47 @@ export class RecommendationService extends BaseService<Recommendation> {
     }
 
     /**
+     * Decrypt sensitive data from User
+     * @param user - User instance with potentially encrypted data
+     * @returns User with decrypted sensitive fields
+     */
+    private decryptUserData(user: User): User {
+        if (!user) return user;
+
+        try {
+            // Fields that should be decrypted in User model
+            const fieldsToDecrypt = ['name', 'email'];
+
+            // Create a plain object from the model instance
+            const decryptedData: any = user.toJSON();
+
+            // Decrypt each sensitive field
+            for (const field of fieldsToDecrypt) {
+                if (decryptedData[field] && typeof decryptedData[field] === 'string') {
+                    try {
+                        // Check if the field is encrypted (contains colons indicating encrypted format)
+                        if (decryptedData[field].includes(':') && decryptedData[field].split(':').length === 3) {
+                            decryptedData[field] = CryptoUtil.decrypt(decryptedData[field]);
+                        }
+                        // If not encrypted, leave as is (might be plain text or already decrypted)
+                    } catch (error) {
+                        console.warn(`Failed to decrypt field ${field} for User ${user.id}:`, (error as Error).message);
+                        // Keep original value if decryption fails
+                    }
+                }
+            }
+
+            // Return the User instance with decrypted data
+            const result = User.build(decryptedData);
+            result.isNewRecord = false;
+            return result;
+        } catch (error) {
+            console.warn(`Failed to decrypt User data for ${user.id}:`, (error as Error).message);
+            return user;
+        }
+    }
+
+    /**
      * Decrypt sensitive data from ProfileApplicant
      * @param profileApplicant - ProfileApplicant instance with potentially encrypted data
      * @returns ProfileApplicant with decrypted sensitive fields
@@ -89,11 +130,11 @@ export class RecommendationService extends BaseService<Recommendation> {
     }
 
     /**
-     * Process recommendation data and decrypt pemohon information
-     * @param recommendation - Recommendation instance
-     * @returns Recommendation with decrypted pemohon data
-     */
-    private processRecommendationData(recommendation: Recommendation): any {
+ * Process recommendation data and decrypt pemohon information
+ * @param recommendation - Recommendation instance
+ * @returns Recommendation with decrypted pemohon data
+ */
+    private async processRecommendationData(recommendation: Recommendation): Promise<any> {
         if (!recommendation) return recommendation;
 
         try {
@@ -103,6 +144,7 @@ export class RecommendationService extends BaseService<Recommendation> {
             // Debug: Check if pemohon data exists
             console.log('Processing recommendation:', processedData.id);
             console.log('Pemohon data exists:', !!processedData.pemohon);
+            console.log('Pemeriksa IDs exists:', !!processedData.pemeriksa);
 
             // If pemohon data is included, decrypt it
             if (processedData.pemohon) {
@@ -113,13 +155,57 @@ export class RecommendationService extends BaseService<Recommendation> {
                 console.log('Decrypted pemohon name:', processedData.pemohon.namaPemohon);
             }
 
+            // If pemeriksa IDs exist, fetch and decrypt user data
+            if (processedData.pemeriksa && Array.isArray(processedData.pemeriksa) && processedData.pemeriksa.length > 0) {
+                console.log('Fetching pemeriksa data for IDs:', processedData.pemeriksa);
+
+                try {
+                    // Fetch user data for all pemeriksa IDs
+                    const pemeriksaUsers = await User.findAll({
+                        where: {
+                            id: processedData.pemeriksa
+                        },
+                        include: [
+                            {
+                                model: Role,
+                                as: 'role',
+                            },
+                        ],
+                    });
+
+                    console.log('Found pemeriksa users:', pemeriksaUsers.length);
+
+                    // Decrypt each pemeriksa user data
+                    const decryptedPemeriksa = pemeriksaUsers.map(user => {
+                        const decryptedUser = this.decryptUserData(user).toJSON();
+                        console.log('Decrypted pemeriksa name:', decryptedUser.name);
+                        return {
+                            id: decryptedUser.id,
+                            name: decryptedUser.name,
+                            email: decryptedUser.email,
+                            role: user.role // Use the included role from the query
+                        };
+                    });
+
+                    // Replace pemeriksa IDs with detailed user data
+                    processedData.inspectors = decryptedPemeriksa;
+                } catch (error) {
+                    console.warn('Failed to fetch pemeriksa data:', (error as Error).message);
+                    processedData.inspectors = [];
+                }
+            } else {
+                processedData.inspectors = [];
+            }
+
             // Return the processed data as plain object to maintain pemohon data
             return processedData;
         } catch (error) {
             console.warn(`Failed to process recommendation data for ${recommendation.id}:`, (error as Error).message);
             return recommendation.toJSON();
         }
-    } async createRecommendation(data: CreateRecommendationDto): Promise<Recommendation> {
+    }
+
+    async createRecommendation(data: CreateRecommendationDto): Promise<Recommendation> {
         // Verify that pemohon exists
         const pemohon = await ProfileApplicant.findByPk(data.pemohon_id);
         if (!pemohon) {
@@ -168,12 +254,15 @@ export class RecommendationService extends BaseService<Recommendation> {
                 );
 
                 // Transform data for pemohon - only show basic info
-                const pemohonRows = result.rows.map(rec => ({
-                    id: rec.id,
-                    nomor_rekomendasi: rec.nomor_rekomendasi,
-                    status: rec.status,
-                    status_text: rec.getStatusText(),
-                    created_at: rec.createdAt,
+                const pemohonRows = await Promise.all(result.rows.map(async (rec) => {
+                    // We don't need to process recommendation data for petani, just basic info
+                    return {
+                        id: rec.id,
+                        nomor_rekomendasi: rec.nomor_rekomendasi,
+                        status: rec.status,
+                        status_text: rec.getStatusText(),
+                        created_at: rec.createdAt,
+                    };
                 }));
 
                 return {
@@ -196,8 +285,8 @@ export class RecommendationService extends BaseService<Recommendation> {
                 console.log('First recommendation has pemohon:', !!(result.rows[0] && (result.rows[0] as any).pemohon));
 
                 // Transform data for inspektur with decrypted pemohon data
-                const inspekturRows = result.rows.map(rec => {
-                    const processedRec = this.processRecommendationData(rec);
+                const inspekturRows = await Promise.all(result.rows.map(async (rec) => {
+                    const processedRec = await this.processRecommendationData(rec);
                     return {
                         id: processedRec.id,
                         pemohon: processedRec.pemohon ? {
@@ -207,11 +296,12 @@ export class RecommendationService extends BaseService<Recommendation> {
                             telepon: processedRec.pemohon.telepon,
                             alamatPemohon: processedRec.pemohon.alamatPemohon,
                         } : null,
+                        inspectors: processedRec.inspectors || [],
                         status: processedRec.status,
                         status_text: rec.getStatusText(),
                         created_at: processedRec.created_at,
                     };
-                });
+                }));
 
                 return {
                     rows: inspekturRows,
@@ -236,8 +326,8 @@ export class RecommendationService extends BaseService<Recommendation> {
                 console.log('First recommendation has pemohon:', !!(result.rows[0] && (result.rows[0] as any).pemohon));
 
                 // Transform data for admin/verifikatur/etc with decrypted pemohon data
-                const adminRows = result.rows.map(rec => {
-                    const processedRec = this.processRecommendationData(rec);
+                const adminRows = await Promise.all(result.rows.map(async (rec) => {
+                    const processedRec = await this.processRecommendationData(rec);
                     return {
                         id: processedRec.id,
                         pemohon: processedRec.pemohon ? {
@@ -248,11 +338,12 @@ export class RecommendationService extends BaseService<Recommendation> {
                             alamatPemohon: processedRec.pemohon.alamatPemohon,
                             nik: processedRec.pemohon.nik,
                         } : null,
+                        inspectors: processedRec.inspectors || [],
                         status: processedRec.status,
                         status_text: rec.getStatusText(),
                         created_at: processedRec.created_at,
                     };
-                });
+                }));
 
                 return {
                     rows: adminRows,
@@ -272,7 +363,7 @@ export class RecommendationService extends BaseService<Recommendation> {
             return null;
         }
         // Process and decrypt the recommendation data
-        return this.processRecommendationData(recommendation);
+        return await this.processRecommendationData(recommendation);
     }
 
     async findProfileApplicantByUserId(userId: string): Promise<ProfileApplicant | null> {

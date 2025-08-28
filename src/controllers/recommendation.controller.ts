@@ -40,6 +40,27 @@ interface MulterRequest extends Request {
  *           type: array
  *           items:
  *             type: string
+ *         inspectors:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               id:
+ *                 type: string
+ *                 format: uuid
+ *               name:
+ *                 type: string
+ *                 description: Nama pemeriksa (decrypted)
+ *               email:
+ *                 type: string
+ *                 description: Email pemeriksa (decrypted)
+ *               role:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                   name:
+ *                     type: string
  *         tenaga_kerja_sd:
  *           type: integer
  *         tenaga_kerja_smp:
@@ -547,7 +568,7 @@ export class RecommendationController {
      * @swagger
      * /api/recommendations/{id}/inspection:
      *   post:
-     *     summary: Inspect recommendation (verifikatur only)
+     *     summary: Inspect recommendation (inspektur only)
      *     tags: [Recommendations]
      *     security:
      *       - bearerAuth: []
@@ -580,10 +601,10 @@ export class RecommendationController {
             const user = (req as any).user;
             const { id } = req.params;
 
-            if (user.role !== 'verifikatur') {
+            if (user.role !== 'inspektur') {
                 res.status(403).json({
                     success: false,
-                    message: 'Only verifikatur can inspect recommendations',
+                    message: 'Only inspektur can inspect recommendations',
                 });
                 return;
             }

@@ -52,7 +52,7 @@ router.post('/:id/scheduling',
 // Inspect recommendation (verifikatur only)
 router.post('/:id/inspection',
     authMiddleware(),
-    rbacMiddleware(['verifikatur']),
+    rbacMiddleware(['inspektur']),
     recommendationController.inspectRecommendation
 );
 
