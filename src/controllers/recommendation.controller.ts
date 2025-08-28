@@ -384,7 +384,7 @@ export class RecommendationController {
             // Handle file upload for file_penguasaan_benih
             let filePath: string | undefined;
             if (req.file) {
-                filePath = req.file.path;
+                filePath = req.file?.filename;
             } else if (req.body.file_penguasaan_benih && typeof req.body.file_penguasaan_benih === 'string') {
                 // If it's a string (direct file path), keep it as is
                 filePath = req.body.file_penguasaan_benih;
@@ -652,9 +652,20 @@ export class RecommendationController {
      *     requestBody:
      *       required: true
      *       content:
-     *         application/json:
+     *         multipart/form-data:
      *           schema:
-     *             $ref: '#/components/schemas/PublishRequest'
+     *             type: object
+     *             properties:
+     *               nomor_rekomendasi:
+     *                 type: string
+     *                 description: Recommendation number
+     *               surat_rekomendasi:
+     *                 type: string
+     *                 format: binary
+     *                 description: Recommendation letter file (PDF, DOC, DOCX, or images)
+     *             required:
+     *               - nomor_rekomendasi
+     *               - surat_rekomendasi
      *     responses:
      *       200:
      *         description: Recommendation published successfully
@@ -667,7 +678,7 @@ export class RecommendationController {
      *       500:
      *         description: Internal server error
      */
-    publishRecommendation = async (req: Request, res: Response): Promise<void> => {
+    publishRecommendation = async (req: MulterRequest, res: Response): Promise<void> => {
         try {
             const user = (req as any).user;
             const { id } = req.params;
@@ -680,15 +691,21 @@ export class RecommendationController {
                 return;
             }
 
-            const publishData: PublishDto = req.body;
+            const { nomor_rekomendasi } = req.body;
+            const surat_rekomendasi = req.file?.filename;
 
-            if (!publishData.nomor_rekomendasi || !publishData.surat_rekomendasi) {
+            if (!nomor_rekomendasi || !surat_rekomendasi) {
                 res.status(400).json({
                     success: false,
-                    message: 'nomor_rekomendasi and surat_rekomendasi are required',
+                    message: 'nomor_rekomendasi and surat_rekomendasi file are required',
                 });
                 return;
             }
+
+            const publishData: PublishDto = {
+                nomor_rekomendasi,
+                surat_rekomendasi,
+            };
 
             const recommendation = await this.recommendationService.publishRecommendation(id, publishData);
 

@@ -60,6 +60,7 @@ router.post('/:id/inspection',
 router.post('/:id/publish',
     authMiddleware(),
     rbacMiddleware(['kepala']),
+    upload.single('surat_rekomendasi'),
     recommendationController.publishRecommendation
 );
 

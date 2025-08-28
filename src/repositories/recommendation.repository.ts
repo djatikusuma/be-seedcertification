@@ -42,7 +42,9 @@ export class RecommendationRepository extends BaseRepository<Recommendation> {
             (where as any)[Op.and] = Sequelize.literal(`JSON_CONTAINS(pemeriksa, '"${filters.pemeriksa_contains}"')`);
 
             console.log('Using JSON_CONTAINS query for pemeriksa');
-        } if (includeApplicant) {
+        }
+
+        if (includeApplicant) {
             include.push({
                 model: ProfileApplicant,
                 as: 'pemohon',
