@@ -58,20 +58,20 @@ export = {
                 roleId: roles.admin,
             },
             // Regular users (for internal profiles)
-            {
-                id: uuidv4(),
-                name: 'User Internal 1',
-                email: 'internal1@example.com',
-                password: userPassword,
-                roleId: roles.user,
-            },
-            {
-                id: uuidv4(),
-                name: 'User Internal 2',
-                email: 'internal2@example.com',
-                password: userPassword,
-                roleId: roles.user,
-            },
+            // {
+            //     id: uuidv4(),
+            //     name: 'User Internal 1',
+            //     email: 'internal1@example.com',
+            //     password: userPassword,
+            //     roleId: roles.user,
+            // },
+            // {
+            //     id: uuidv4(),
+            //     name: 'User Internal 2',
+            //     email: 'internal2@example.com',
+            //     password: userPassword,
+            //     roleId: roles.user,
+            // },
             // Petani users
             {
                 id: uuidv4(),

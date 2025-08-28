@@ -214,7 +214,7 @@ export class TempUserService extends BaseService<TempUser> {
 
             // If approved, create user account
             if (verificationData.status === VerificationStatus.APPROVED) {
-                const userCreationResult = await this.createUserFromTempUser(tempUser);
+                const userCreationResult = await this.createUserFromTempUser(tempUser, tempUser.userType);
 
                 if (!userCreationResult.success) {
                     // Rollback verification if user creation fails
@@ -250,14 +250,14 @@ export class TempUserService extends BaseService<TempUser> {
     }
 
     // Create user account from approved temp user
-    private async createUserFromTempUser(tempUser: TempUser): Promise<{
+    private async createUserFromTempUser(tempUser: TempUser, role: string): Promise<{
         success: boolean;
         message: string;
         data?: any;
     }> {
         try {
             // Get default role for new users (assuming 'user' role exists)
-            const defaultRole = await this.roleRepository.findByName('user');
+            const defaultRole = await this.roleRepository.findByName(role);
             if (!defaultRole) {
                 return {
                     success: false,

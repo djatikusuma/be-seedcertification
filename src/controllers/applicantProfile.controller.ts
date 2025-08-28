@@ -2,12 +2,7 @@ import { Request, Response } from 'express';
 import { ProfileApplicantService } from '../services/profileApplicant.service';
 
 interface MulterRequest extends Request {
-    file?: {
-        path: string;
-        filename: string;
-        mimetype: string;
-        size: number;
-    };
+    file?: Express.Multer.File;
 }
 
 /**

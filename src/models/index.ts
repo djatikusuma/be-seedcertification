@@ -7,6 +7,7 @@ import { TempUser } from './TempUser.model';
 import { AuditTrail } from './AuditTrail.model';
 import { Settings } from './Settings.model';
 import { Commodity } from './Commodity.model';
+import { Recommendation } from './Recommendation.model';
 
-export { User, Role, Menu, Profile, ProfileApplicant, TempUser, AuditTrail, Settings, Commodity };
-export default { User, Role, Menu, Profile, ProfileApplicant, TempUser, AuditTrail, Settings, Commodity };
+export { User, Role, Menu, Profile, ProfileApplicant, TempUser, AuditTrail, Settings, Commodity, Recommendation };
+export default { User, Role, Menu, Profile, ProfileApplicant, TempUser, AuditTrail, Settings, Commodity, Recommendation };

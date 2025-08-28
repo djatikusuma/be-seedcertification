@@ -35,15 +35,22 @@ export const authMiddleware = (allowedRoles?: string[]) => {
 
             // Get user with role information for proper role assignment
             const { User } = await import('../models/User.model');
+            const { Role } = await import('../models/Role.model');
             let userRole = 'user'; // Default fallback
 
             try {
                 const fullUser = await User.findByPk(decodedToken.id, {
-                    include: ['role']
+                    include: [{
+                        model: Role,
+                        as: 'role'
+                    }]
                 });
 
                 if (fullUser && fullUser.role) {
                     userRole = fullUser.role.roleName;
+                    console.log('Retrieved user role:', userRole);
+                } else {
+                    console.warn('User or role not found for user ID:', decodedToken.id);
                 }
             } catch (error) {
                 console.warn('Could not fetch user role, using default:', error);
@@ -95,6 +102,7 @@ export const rbacMiddleware = (allowedRoles: string[]) => {
 
             // Use the role that's already loaded by authMiddleware
             const userRole = user.role;
+            console.log('User Role:', userRole);
 
             if (!userRole || !allowedRoles.includes(userRole)) {
                 return res.status(403).json({
