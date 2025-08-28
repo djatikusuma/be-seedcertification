@@ -46,4 +46,4 @@ coverage/
 # TypeScript cache
 *.tsbuildinfo
 
-upload/recommendations/*
+upload/recommendations/
