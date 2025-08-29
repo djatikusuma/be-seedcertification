@@ -210,7 +210,7 @@ export class CertificationController {
 
     /**
      * POST /api/certifications/:id/verification
-     * Verify certification (by verifikator)
+     * Verify certification (by verifikatur)
      */
     async verifyCertification(req: AuthenticatedRequest, res: Response): Promise<void> {
         try {
@@ -218,8 +218,8 @@ export class CertificationController {
             const { catatan_administrasi, status } = req.body;
             const userRole = req.user?.role;
 
-            // Only verifikator can verify certifications
-            if (userRole !== 'verifikator') {
+            // Only verifikatur can verify certifications
+            if (userRole !== 'verifikatur') {
                 res.status(403).json({
                     success: false,
                     message: 'Anda tidak memiliki akses untuk memverifikasi sertifikasi',
@@ -258,8 +258,8 @@ export class CertificationController {
             const { tanggal_jadwal_pemeriksaan, pemeriksa } = req.body;
             const userRole = req.user?.role;
 
-            // Only inspektur_kepala can schedule
-            if (userRole !== 'inspektur_kepala') {
+            // Only inspektur_ketua can schedule
+            if (userRole !== 'inspektur_ketua') {
                 res.status(403).json({
                     success: false,
                     message: 'Anda tidak memiliki akses untuk menjadwalkan pemeriksaan',

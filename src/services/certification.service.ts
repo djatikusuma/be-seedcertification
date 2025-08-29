@@ -4,6 +4,7 @@ import { CertificationInterface, CertificationInspectionInterface } from '../int
 import CertificationRepository, { CertificationFilterOptions } from '../repositories/certification.repository';
 import CertificationInspectionRepository from '../repositories/certification-inspection.repository';
 import { UserRepository } from '../repositories/user.repository';
+import { CryptoUtil } from '../utils/crypto.util';
 
 export interface CreateCertificationData {
     rekomendasi_id: string;
@@ -49,10 +50,27 @@ export class CertificationService extends BaseService<Certification> {
     private userRepository: UserRepository;
 
     constructor() {
-        super(new CertificationRepository());
-        this.certificationRepository = this.repository as CertificationRepository;
+        const certificationRepository = new CertificationRepository();
+        super(certificationRepository);
+        this.certificationRepository = certificationRepository;
         this.certificationInspectionRepository = new CertificationInspectionRepository();
         this.userRepository = new UserRepository();
+    }
+
+    /**
+     * Get status label from status number
+     */
+    private getStatusLabel(status: number): string {
+        const statusLabels: { [key: number]: string } = {
+            1: 'Verifikasi Dokumen',
+            2: 'Penjadwalan',
+            3: 'Verifikasi Lapangan',
+            4: 'Pengesahan Pemeriksaan',
+            5: 'Penerbitan Sertifikat',
+            6: 'Selesai',
+            7: 'Ditolak'
+        };
+        return statusLabels[status] || 'Status Tidak Diketahui';
     }
 
     /**
@@ -77,7 +95,13 @@ export class CertificationService extends BaseService<Certification> {
             status: 1, // Status 1: Verifikasi Dokumen
         };
 
-        return await this.certificationRepository.create(certificationData);
+        const certification = await this.certificationRepository.create(certificationData);
+
+        // Add status label to the response
+        const certificationWithLabel: any = certification.toJSON();
+        certificationWithLabel.status_label = this.getStatusLabel(certificationWithLabel.status);
+
+        return certificationWithLabel;
     }
 
     /**
@@ -117,6 +141,9 @@ export class CertificationService extends BaseService<Certification> {
                 certificationData.pemohon = this.decryptProfileData(certificationData.pemohon);
             }
 
+            // Add status label
+            certificationData.status_label = this.getStatusLabel(certificationData.status);
+
             return certificationData;
         });
 
@@ -152,12 +179,35 @@ export class CertificationService extends BaseService<Certification> {
             const pemeriksaUsers = await this.userRepository.findByIds(certificationData.pemeriksa);
             certificationData.pemeriksa_detail = pemeriksaUsers.map((user: any) => {
                 const userData = user.toJSON();
+
+                // Decrypt user data if it has encrypted fields
+                if (userData.name && typeof userData.name === 'string') {
+                    try {
+                        userData.name = CryptoUtil.decrypt(userData.name);
+                    } catch (error) {
+                        console.warn('Failed to decrypt user name:', error);
+                    }
+                }
+
+                if (userData.email && typeof userData.email === 'string') {
+                    try {
+                        userData.email = CryptoUtil.decrypt(userData.email);
+                    } catch (error) {
+                        console.warn('Failed to decrypt user email:', error);
+                    }
+                }
+
+                // Decrypt profile data if exists
                 if (userData.profile) {
                     userData.profile = this.decryptProfileData(userData.profile);
                 }
+
                 return userData;
             });
         }
+
+        // Add status label
+        certificationData.status_label = this.getStatusLabel(certificationData.status);
 
         return certificationData;
     }
@@ -184,7 +234,15 @@ export class CertificationService extends BaseService<Certification> {
             catatan_administrasi: catatanAdministrasi || undefined,
         };
 
-        return await this.certificationRepository.updateStatus(id, newStatus, updateData);
+        const updatedCertification = await this.certificationRepository.updateStatus(id, newStatus, updateData);
+
+        if (updatedCertification) {
+            const certificationWithLabel: any = updatedCertification.toJSON();
+            certificationWithLabel.status_label = this.getStatusLabel(certificationWithLabel.status);
+            return certificationWithLabel;
+        }
+
+        return updatedCertification;
     }
 
     /**
@@ -216,10 +274,18 @@ export class CertificationService extends BaseService<Certification> {
             }
         }
 
-        return await this.certificationRepository.updateStatus(id, 3, {
+        const updatedCertification = await this.certificationRepository.updateStatus(id, 3, {
             tanggal_jadwal_pemeriksaan: tanggalJadwalPemeriksaan,
             pemeriksa: pemeriksa,
         }); // Status 3: Verifikasi Lapangan
+
+        if (updatedCertification) {
+            const certificationWithLabel: any = updatedCertification.toJSON();
+            certificationWithLabel.status_label = this.getStatusLabel(certificationWithLabel.status);
+            return certificationWithLabel;
+        }
+
+        return updatedCertification;
     }
 
     /**
@@ -269,7 +335,15 @@ export class CertificationService extends BaseService<Certification> {
             catatan_pemeriksaan: catatanPemeriksaan || undefined,
         };
 
-        return await this.certificationRepository.updateStatus(id, newStatus, updateData);
+        const updatedCertification = await this.certificationRepository.updateStatus(id, newStatus, updateData);
+
+        if (updatedCertification) {
+            const certificationWithLabel: any = updatedCertification.toJSON();
+            certificationWithLabel.status_label = this.getStatusLabel(certificationWithLabel.status);
+            return certificationWithLabel;
+        }
+
+        return updatedCertification;
     }
 
     /**
@@ -283,14 +357,31 @@ export class CertificationService extends BaseService<Certification> {
 
             // Decrypt pemeriksa data if needed
             if (inspectionData.pemeriksa) {
-                inspectionData.pemeriksa = this.decryptProfileData(inspectionData.pemeriksa);
+                const pemeriksaData = { ...inspectionData.pemeriksa };
+
+                // Decrypt user fields
+                if (pemeriksaData.name && typeof pemeriksaData.name === 'string') {
+                    try {
+                        pemeriksaData.name = CryptoUtil.decrypt(pemeriksaData.name);
+                    } catch (error) {
+                        console.warn('Failed to decrypt pemeriksa name:', error);
+                    }
+                }
+
+                if (pemeriksaData.email && typeof pemeriksaData.email === 'string') {
+                    try {
+                        pemeriksaData.email = CryptoUtil.decrypt(pemeriksaData.email);
+                    } catch (error) {
+                        console.warn('Failed to decrypt pemeriksa email:', error);
+                    }
+                }
+
+                inspectionData.pemeriksa = pemeriksaData;
             }
 
             return inspectionData;
         });
-    }
-
-    /**
+    }    /**
      * Validate certification (by inspektur_kepala)
      */
     async validateCertification(
@@ -312,7 +403,15 @@ export class CertificationService extends BaseService<Certification> {
             catatan_validasi: catatanValidasi || undefined,
         };
 
-        return await this.certificationRepository.updateStatus(id, newStatus, updateData);
+        const updatedCertification = await this.certificationRepository.updateStatus(id, newStatus, updateData);
+
+        if (updatedCertification) {
+            const certificationWithLabel: any = updatedCertification.toJSON();
+            certificationWithLabel.status_label = this.getStatusLabel(certificationWithLabel.status);
+            return certificationWithLabel;
+        }
+
+        return updatedCertification;
     }
 
     /**
@@ -334,12 +433,20 @@ export class CertificationService extends BaseService<Certification> {
             throw new Error('Sertifikasi tidak dalam status penerbitan surat rekomendasi');
         }
 
-        return await this.certificationRepository.updateStatus(id, 6, {
+        const updatedCertification = await this.certificationRepository.updateStatus(id, 6, {
             nomor_surat_sertifikat: nomorSuratSertifikat,
             tanggal_surat_sertifikat: tanggalSertifikat,
             tanggal_expired_sertifikat: tanggalExpiredSertifikat,
             file_surat_sertifikat: fileSuratSertifikat,
         }); // Status 6: Selesai
+
+        if (updatedCertification) {
+            const certificationWithLabel: any = updatedCertification.toJSON();
+            certificationWithLabel.status_label = this.getStatusLabel(certificationWithLabel.status);
+            return certificationWithLabel;
+        }
+
+        return updatedCertification;
     }
 
     /**
@@ -348,9 +455,33 @@ export class CertificationService extends BaseService<Certification> {
     private decryptProfileData(profile: any): any {
         if (!profile) return profile;
 
-        // Untuk saat ini, return data as is
-        // Jika perlu decrypt, implementasikan CryptoUtil
-        return profile;
+        try {
+            const decryptedProfile = { ...profile };
+
+            // List of fields that are encrypted in ProfileApplicant
+            const encryptedFields = [
+                'nik', 'npwp', 'email', 'namaPemohon', 'telepon',
+                'alamatPemohon', 'alamatPerusahaan', 'nikKuasa', 'namaKuasa'
+            ];
+
+            // Decrypt each field if it exists
+            encryptedFields.forEach(field => {
+                if (decryptedProfile[field] && typeof decryptedProfile[field] === 'string') {
+                    try {
+                        // Try to decrypt the field
+                        decryptedProfile[field] = CryptoUtil.decrypt(decryptedProfile[field]);
+                    } catch (error) {
+                        // If decryption fails, keep original value (might already be decrypted)
+                        console.warn(`Failed to decrypt field ${field}:`, error);
+                    }
+                }
+            });
+
+            return decryptedProfile;
+        } catch (error) {
+            console.error('Error decrypting profile data:', error);
+            return profile;
+        }
     }
 }
 
