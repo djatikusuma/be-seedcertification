@@ -121,3 +121,9 @@ export const rbacMiddleware = (allowedRoles: string[]) => {
         }
     };
 };
+
+// Export AuthenticatedRequest type
+export { AuthenticatedRequest } from '../interfaces/auth.interface';
+
+// Export simple token authentication
+export const authenticateToken = authMiddleware();

@@ -80,3 +80,43 @@ export interface ProfileApplicantInterface extends BaseEntityInterface {
     fileSuratKuasa?: string;
     statusKepemilikan?: string;
 }
+
+export interface CertificationInterface extends BaseEntityInterface {
+    nomor_registrasi: string;
+    nomor_surat_sertifikat?: string;
+    tanggal_surat_sertifikat?: Date;
+    tanggal_expired_sertifikat?: Date;
+    pemohon_id: string;
+    rekomendasi_id: string;
+    komoditas_id: string;
+    tipe: 'siaptanam' | 'pratanam';
+    jumlah_benih: number;
+    satuan: string;
+    varietas: string;
+    status: number;
+    catatan_administrasi?: string;
+    catatan_pemeriksaan?: string;
+    catatan_validasi?: string;
+    pemeriksa?: string[];
+    tanggal_jadwal_pemeriksaan?: Date;
+    tanggal_pemeriksaan?: Date;
+    file_surat_sertifikat?: string;
+    file_asal_benih?: string;
+    file_dokumen_pendukung?: string;
+}
+
+export interface CertificationInspectionInterface extends BaseEntityInterface {
+    certification_id: string;
+    jumlah_benih: number;
+    jumlah_diperiksa: number;
+    jumlah_lolos: number;
+    jumlah_tidak_lolos: number;
+    jumlah_belum_lolos: number;
+    persentase_kemurnian?: number;
+    kadar_air?: number;
+    daya_berkecambah?: number;
+    catatan?: string;
+    status_pemeriksaan?: 'lolos' | 'tidak_lolos' | 'pending';
+    file_dokumen_hasil_pemeriksaan?: string;
+    pemeriksa_id: string;
+}
