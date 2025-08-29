@@ -216,6 +216,141 @@ export class AuthController {
             });
         }
     };
+
+    /**
+     * @swagger
+     * /api/auth/me:
+     *   get:
+     *     summary: Get current user information
+     *     tags: [Authentication]
+     *     security:
+     *       - bearerAuth: []
+     *     responses:
+     *       200:
+     *         description: Current user data retrieved successfully
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *               properties:
+     *                 success:
+     *                   type: boolean
+     *                   example: true
+     *                 message:
+     *                   type: string
+     *                   example: User data retrieved successfully
+     *                 data:
+     *                   type: object
+     *                   properties:
+     *                     id:
+     *                       type: string
+     *                       example: "123e4567-e89b-12d3-a456-426614174000"
+     *                     name:
+     *                       type: string
+     *                       example: "John Doe"
+     *                     email:
+     *                       type: string
+     *                       example: "john@example.com"
+     *                     role:
+     *                       type: object
+     *                       properties:
+     *                         id:
+     *                           type: string
+     *                         roleName:
+     *                           type: string
+     *                           example: "admin"
+     *                     profile:
+     *                       type: object
+     *                       nullable: true
+     *                       description: Unified profile data (combines Profile and ProfileApplicant)
+     *                       properties:
+     *                         id:
+     *                           type: string
+     *                           description: Profile ID
+     *                         userId:
+     *                           type: string
+     *                           description: User ID
+     *                         nama:
+     *                           type: string
+     *                           description: Full name (from ProfileApplicant.namaPemohon or Profile.nama)
+     *                         nik:
+     *                           type: string
+     *                           description: National ID number
+     *                         email:
+     *                           type: string
+     *                           description: Email address (from ProfileApplicant)
+     *                         telepon:
+     *                           type: string
+     *                           description: Phone number
+     *                         alamat:
+     *                           type: string
+     *                           description: Address (from ProfileApplicant.alamatPemohon or Profile.alamat)
+     *                         npwp:
+     *                           type: string
+     *                           description: Tax ID (from ProfileApplicant)
+     *                         alamatPerusahaan:
+     *                           type: string
+     *                           description: Company address (from ProfileApplicant)
+     *                         statusKepemilikan:
+     *                           type: string
+     *                           description: Ownership status (from ProfileApplicant)
+     *                         profileSources:
+     *                           type: object
+     *                           properties:
+     *                             hasGeneralProfile:
+     *                               type: boolean
+     *                               description: Whether user has general profile
+     *                             hasApplicantProfile:
+     *                               type: boolean
+     *                               description: Whether user has applicant profile
+     *       401:
+     *         description: Unauthorized - Invalid token
+     *       404:
+     *         description: User not found
+     *       500:
+     *         description: Internal server error
+     */
+    me = async (req: Request, res: Response): Promise<Response> => {
+        try {
+            const user = (req as any).user;
+
+            if (!user || !user.id) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Unauthorized'
+                });
+            }
+
+            const userData = await this.authService.getCurrentUser(user.id);
+
+            if (!userData) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'User not found'
+                });
+            }
+
+            // Log for debugging unified profile
+            if (userData.profile) {
+                console.log('Unified profile data found for user:', user.id);
+            }
+
+            // Remove sensitive data (password and emailHash already excluded by AuthService)
+            const { password, emailHash, ...userResponse } = userData;
+
+            return res.json({
+                success: true,
+                message: 'User data retrieved successfully',
+                data: userResponse
+            });
+        } catch (error) {
+            console.error('Get current user error:', error);
+            return res.status(500).json({
+                success: false,
+                message: 'Internal server error'
+            });
+        }
+    };
 }
 
 export default AuthController;

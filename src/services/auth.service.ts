@@ -1,4 +1,7 @@
 import { User } from '../models/User.model';
+import { Role } from '../models/Role.model';
+import { Profile } from '../models/Profile.model';
+import { ProfileApplicant } from '../models/ProfileApplicant.model';
 import bcrypt from 'bcryptjs';
 import jwt, { Secret, SignOptions } from 'jsonwebtoken';
 import { jwtConfig, getJwtConfig } from '../config/jwt.config';
@@ -85,6 +88,139 @@ export class AuthService {
         } catch (error) {
             console.error('Token verification error:', error);
             return null;
+        }
+    }
+
+    /**
+     * Get current user with profile and role
+     * @param userId - User ID from JWT token
+     * @returns User data with unified profile and role (automatically decrypted)
+     */
+    async getCurrentUser(userId: string): Promise<any> {
+        try {
+            const user = await User.findByPk(userId, {
+                include: [
+                    {
+                        model: Role,
+                        as: 'role',
+                        attributes: ['id', 'roleName'], // Only include necessary role fields
+                    },
+                    {
+                        model: Profile,
+                        as: 'profile',
+                        required: false, // Left join - profile might not exist
+                    },
+                    {
+                        model: ProfileApplicant,
+                        as: 'profileApplicant',
+                        required: false, // Left join - profile applicant might not exist
+                    },
+                ],
+            });
+
+            if (!user) {
+                return null;
+            }
+
+            // Manual decryption for profile relations since hooks might not work on includes
+            if (user.profile) {
+                this.decryptProfileData(user.profile);
+            }
+
+            if (user.profileApplicant) {
+                this.decryptProfileApplicantData(user.profileApplicant);
+            }
+
+            // Transform data structure to unify profiles under single 'profile' key
+            const userData = user.toJSON() as any;
+
+            // Remove original profile fields
+            delete userData.profile;
+            delete userData.profileApplicant;
+
+            let unifiedProfile = {};
+            if (user.profile) {
+                unifiedProfile = user.profile;
+            }
+
+            if (user.profileApplicant) {
+                unifiedProfile = user.profileApplicant;
+            }
+
+            // Merge profiles into single profile object
+            // const unifiedProfile = this.mergeProfiles(profile, profileApplicant);
+
+            return {
+                ...userData,
+                profile: unifiedProfile
+            };
+        } catch (error) {
+            console.error('Get current user error:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Manually decrypt Profile data
+     * @param profile - Profile instance to decrypt
+     */
+    private decryptProfileData(profile: any): void {
+        const ENCRYPTED_FIELDS = ['nama', 'nik', 'telepon', 'alamat'];
+
+        for (const field of ENCRYPTED_FIELDS) {
+            const value = profile[field];
+            if (value && typeof value === 'string') {
+                try {
+                    // Import CryptoUtil dynamically to avoid circular imports
+                    const { CryptoUtil } = require('../utils/crypto.util');
+
+                    // Check if it's new format (encrypted:iv:salt)
+                    if (value.includes(':') && value.split(':').length === 3) {
+                        profile[field] = CryptoUtil.decrypt(value);
+                    } else {
+                        // Try old JSON format
+                        const encryptionData = JSON.parse(value);
+                        if (encryptionData.encrypted && encryptionData.iv && encryptionData.salt) {
+                            profile[field] = CryptoUtil.decrypt(encryptionData);
+                        }
+                    }
+                } catch (error: any) {
+                    // If decryption fails, leave the field as is
+                    console.warn(`Failed to decrypt profile field ${field}:`, error?.message || 'Unknown error');
+                }
+            }
+        }
+    }
+
+    /**
+     * Manually decrypt ProfileApplicant data
+     * @param profileApplicant - ProfileApplicant instance to decrypt
+     */
+    private decryptProfileApplicantData(profileApplicant: any): void {
+        const ENCRYPTED_FIELDS = ['nik', 'npwp', 'email', 'namaPemohon', 'telepon', 'alamatPemohon', 'alamatPerusahaan', 'nikKuasa', 'namaKuasa'];
+
+        for (const field of ENCRYPTED_FIELDS) {
+            const value = profileApplicant[field];
+            if (value && typeof value === 'string') {
+                try {
+                    // Import CryptoUtil dynamically to avoid circular imports
+                    const { CryptoUtil } = require('../utils/crypto.util');
+
+                    // Check if it's new format (encrypted:iv:salt)
+                    if (value.includes(':') && value.split(':').length === 3) {
+                        profileApplicant[field] = CryptoUtil.decrypt(value);
+                    } else {
+                        // Try old JSON format
+                        const encryptionData = JSON.parse(value);
+                        if (encryptionData.encrypted && encryptionData.iv && encryptionData.salt) {
+                            profileApplicant[field] = CryptoUtil.decrypt(encryptionData);
+                        }
+                    }
+                } catch (error: any) {
+                    // If decryption fails, leave the field as is
+                    console.warn(`Failed to decrypt profile applicant field ${field}:`, error?.message || 'Unknown error');
+                }
+            }
         }
     }
 }
