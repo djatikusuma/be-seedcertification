@@ -17,6 +17,7 @@ export interface CommodityInterface extends BaseEntityInterface {
     tableName: 'commodities',
     timestamps: true,
     paranoid: true,
+    underscored: true,
 })
 export class Commodity extends Model<CommodityInterface> implements CommodityInterface {
     @Column({

@@ -9,7 +9,7 @@ import generateSwaggerSpec from './config/swagger.config';
 // Import models to ensure they are registered
 import './models';
 // Explicitly import all models to ensure registration
-import { User, Role, Menu, Profile, ProfileApplicant, TempUser, AuditTrail, Settings } from './models';
+import { User, Role, Menu, Profile, ProfileApplicant, TempUser, AuditTrail, Settings, Commodity, Recommendation, Certification, CertificationInspection } from './models';
 
 // Load environment variables
 dotenv.config();
@@ -68,7 +68,7 @@ const startServer = async () => {
     try {
         // Force model registration
         console.log('Registering models...');
-        const models = [User, Role, Menu, Profile, ProfileApplicant, TempUser, AuditTrail, Settings];
+        const models = [User, Role, Menu, Profile, ProfileApplicant, TempUser, AuditTrail, Settings, Commodity, Recommendation, Certification, CertificationInspection];
         models.forEach(model => {
             console.log(`Model ${model.name} registered:`, !!sequelize.models[model.name]);
         });

@@ -43,9 +43,7 @@ export enum RecommendationStatus {
     tableName: 'recommendations',
     timestamps: true,
     paranoid: true,
-    createdAt: 'created_at',
-    updatedAt: 'updated_at',
-    deletedAt: 'deleted_at',
+    underscored: true,
 })
 export class Recommendation extends Model<RecommendationInterface> implements RecommendationInterface {
     @Column({

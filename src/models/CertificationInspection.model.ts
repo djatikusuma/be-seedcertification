@@ -20,6 +20,7 @@ import { User } from './User.model';
     tableName: 'certification_inspections',
     timestamps: true,
     paranoid: true,
+    underscored: true,
 })
 export class CertificationInspection extends Model<CertificationInspectionInterface> implements CertificationInspectionInterface {
     @PrimaryKey

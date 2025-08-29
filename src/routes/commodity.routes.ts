@@ -13,10 +13,10 @@ const commodityController = new CommodityController();
  */
 
 // Get all commodities with filters and pagination
-router.get('/', authMiddleware(), rbacMiddleware(['admin', 'verifikatur']), commodityController.getAllCommodities);
+router.get('/', authMiddleware(), commodityController.getAllCommodities);
 
 // Get commodity by ID
-router.get('/:id', authMiddleware(), rbacMiddleware(['admin', 'verifikatur']), commodityController.getCommodityById);
+router.get('/:id', authMiddleware(), commodityController.getCommodityById);
 
 // Create new commodity
 router.post('/', authMiddleware(), rbacMiddleware(['admin']), commodityController.createCommodity);

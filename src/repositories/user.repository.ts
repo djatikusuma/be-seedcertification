@@ -45,9 +45,8 @@ export class UserRepository extends BaseRepository<User> {
         return await User.findByPk(id, {
             include: [
                 'role',
-                'profileApplicant',
-                'profileInspector',
-                'profileCompany'
+                'profile',
+                'profileApplicant'
             ]
         });
     }
@@ -62,7 +61,7 @@ export class UserRepository extends BaseRepository<User> {
                     [Op.in]: ids
                 }
             },
-            include: ['role', 'profileApplicant', 'profileInspector', 'profileCompany']
+            include: ['role', 'profile', 'profileApplicant']
         });
     }
 }

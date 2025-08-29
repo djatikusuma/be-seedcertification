@@ -14,11 +14,14 @@ import {
 } from 'sequelize-typescript';
 import { CertificationInterface } from '../interfaces/model.interface';
 import { ProfileApplicant } from './ProfileApplicant.model';
+import { Recommendation } from './Recommendation.model';
+import { Commodity } from './Commodity.model';
 
 @Table({
     tableName: 'certifications',
     timestamps: true,
     paranoid: true,
+    underscored: true,
 })
 export class Certification extends Model<CertificationInterface> implements CertificationInterface {
     @PrimaryKey
@@ -47,10 +50,12 @@ export class Certification extends Model<CertificationInterface> implements Cert
     @Column(DataType.UUID)
     pemohon_id!: string;
 
+    @ForeignKey(() => Recommendation)
     @AllowNull(false)
     @Column(DataType.UUID)
     rekomendasi_id!: string;
 
+    @ForeignKey(() => Commodity)
     @AllowNull(false)
     @Column(DataType.UUID)
     komoditas_id!: string;
@@ -127,6 +132,12 @@ export class Certification extends Model<CertificationInterface> implements Cert
     // Associations
     @BelongsTo(() => ProfileApplicant)
     pemohon!: ProfileApplicant;
+
+    @BelongsTo(() => Recommendation)
+    rekomendasi!: Recommendation;
+
+    @BelongsTo(() => Commodity)
+    komoditas!: Commodity;
 
     /**
      * Generate registration number based on type
