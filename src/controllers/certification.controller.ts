@@ -322,11 +322,7 @@ export class CertificationController {
                     jumlah_diperiksa,
                     jumlah_lolos,
                     jumlah_tidak_lolos,
-                    jumlah_belum_lolos,
-                    persentase_kemurnian,
-                    kadar_air,
-                    daya_berkecambah,
-                    catatan
+                    jumlah_belum_lolos
                 } = req.body;
                 const userRole = req.user?.role;
                 const userId = req.user?.id;
@@ -356,10 +352,6 @@ export class CertificationController {
                     jumlah_tidak_lolos: parseFloat(jumlah_tidak_lolos),
                     jumlah_belum_lolos: parseFloat(jumlah_belum_lolos),
                     pemeriksa_id: userId!,
-                    persentase_kemurnian: persentase_kemurnian ? parseFloat(persentase_kemurnian) : undefined,
-                    kadar_air: kadar_air ? parseFloat(kadar_air) : undefined,
-                    daya_berkecambah: daya_berkecambah ? parseFloat(daya_berkecambah) : undefined,
-                    catatan,
                     file_dokumen_hasil_pemeriksaan: req.file?.filename,
                 };
 

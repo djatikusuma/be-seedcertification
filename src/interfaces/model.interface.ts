@@ -112,11 +112,6 @@ export interface CertificationInspectionInterface extends BaseEntityInterface {
     jumlah_lolos: number;
     jumlah_tidak_lolos: number;
     jumlah_belum_lolos: number;
-    persentase_kemurnian?: number;
-    kadar_air?: number;
-    daya_berkecambah?: number;
-    catatan?: string;
-    status_pemeriksaan?: 'lolos' | 'tidak_lolos' | 'pending';
     file_dokumen_hasil_pemeriksaan?: string;
     pemeriksa_id: string;
 }

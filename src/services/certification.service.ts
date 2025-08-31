@@ -24,10 +24,6 @@ export interface InspectionData {
     jumlah_tidak_lolos: number;
     jumlah_belum_lolos: number;
     pemeriksa_id: string;
-    persentase_kemurnian?: number;
-    kadar_air?: number;
-    daya_berkecambah?: number;
-    catatan?: string;
     file_dokumen_hasil_pemeriksaan?: string;
 }
 
@@ -134,18 +130,87 @@ export class CertificationService extends BaseService<Certification> {
         );
 
         // Decrypt sensitive data for display
-        const decryptedRows = rows.map((certification: any) => {
+        const decryptedRows = await Promise.all(rows.map(async (certification: any) => {
             const certificationData = certification.toJSON();
 
             if (certificationData.pemohon) {
                 certificationData.pemohon = this.decryptProfileData(certificationData.pemohon);
             }
 
+            // Add pemeriksa detail - check both inspectors virtual property and pemeriksa array
+            if (certification.inspectors && certification.inspectors.length > 0) {
+                // Use inspectors from repository virtual property
+                certificationData.pemeriksa_detail = certification.inspectors.map((user: any) => {
+                    const userData = user.toJSON();
+
+                    // Decrypt user data if it has encrypted fields
+                    if (userData.name && typeof userData.name === 'string') {
+                        try {
+                            userData.name = CryptoUtil.decrypt(userData.name);
+                        } catch (error) {
+                            console.warn('Failed to decrypt user name:', error);
+                        }
+                    }
+
+                    if (userData.email && typeof userData.email === 'string') {
+                        try {
+                            userData.email = CryptoUtil.decrypt(userData.email);
+                        } catch (error) {
+                            console.warn('Failed to decrypt user email:', error);
+                        }
+                    }
+
+                    // Decrypt profile data if exists
+                    if (userData.profile) {
+                        userData.profile = this.decryptProfileData(userData.profile);
+                    }
+
+                    return userData;
+                });
+            } else if (certificationData.pemeriksa && Array.isArray(certificationData.pemeriksa) && certificationData.pemeriksa.length > 0) {
+                // Fallback: fetch pemeriksa details manually
+                try {
+                    const pemeriksaUsers = await this.userRepository.findByIds(certificationData.pemeriksa);
+                    certificationData.pemeriksa_detail = pemeriksaUsers.map((user: any) => {
+                        const userData = user.toJSON();
+
+                        // Decrypt user data if it has encrypted fields
+                        if (userData.name && typeof userData.name === 'string') {
+                            try {
+                                userData.name = CryptoUtil.decrypt(userData.name);
+                            } catch (error) {
+                                console.warn('Failed to decrypt user name:', error);
+                            }
+                        }
+
+                        if (userData.email && typeof userData.email === 'string') {
+                            try {
+                                userData.email = CryptoUtil.decrypt(userData.email);
+                            } catch (error) {
+                                console.warn('Failed to decrypt user email:', error);
+                            }
+                        }
+
+                        // Decrypt profile data if exists
+                        if (userData.profile) {
+                            userData.profile = this.decryptProfileData(userData.profile);
+                        }
+
+                        return userData;
+                    });
+                } catch (error) {
+                    console.warn('Failed to fetch pemeriksa details:', error);
+                    certificationData.pemeriksa_detail = [];
+                }
+            } else {
+                certificationData.pemeriksa_detail = [];
+            }
+
             // Add status label
             certificationData.status_label = this.getStatusLabel(certificationData.status);
 
             return certificationData;
-        });
+        }));
 
         const totalPages = Math.ceil(count / limit);
 
@@ -174,8 +239,39 @@ export class CertificationService extends BaseService<Certification> {
             certificationData.pemohon = this.decryptProfileData(certificationData.pemohon);
         }
 
-        // Decrypt pemeriksa data if exists
-        if (certificationData.pemeriksa && Array.isArray(certificationData.pemeriksa)) {
+        // Decrypt pemeriksa data - check both inspectors virtual property and pemeriksa array
+        const certificationWithInspectors = certification as any;
+        if (certificationWithInspectors.inspectors && certificationWithInspectors.inspectors.length > 0) {
+            // Use inspectors from repository virtual property
+            certificationData.pemeriksa_detail = certificationWithInspectors.inspectors.map((user: any) => {
+                const userData = user.toJSON();
+
+                // Decrypt user data if it has encrypted fields
+                if (userData.name && typeof userData.name === 'string') {
+                    try {
+                        userData.name = CryptoUtil.decrypt(userData.name);
+                    } catch (error) {
+                        console.warn('Failed to decrypt user name:', error);
+                    }
+                }
+
+                if (userData.email && typeof userData.email === 'string') {
+                    try {
+                        userData.email = CryptoUtil.decrypt(userData.email);
+                    } catch (error) {
+                        console.warn('Failed to decrypt user email:', error);
+                    }
+                }
+
+                // Decrypt profile data if exists
+                if (userData.profile) {
+                    userData.profile = this.decryptProfileData(userData.profile);
+                }
+
+                return userData;
+            });
+        } else if (certificationData.pemeriksa && Array.isArray(certificationData.pemeriksa) && certificationData.pemeriksa.length > 0) {
+            // Fallback: fetch pemeriksa details manually
             const pemeriksaUsers = await this.userRepository.findByIds(certificationData.pemeriksa);
             certificationData.pemeriksa_detail = pemeriksaUsers.map((user: any) => {
                 const userData = user.toJSON();
@@ -204,6 +300,8 @@ export class CertificationService extends BaseService<Certification> {
 
                 return userData;
             });
+        } else {
+            certificationData.pemeriksa_detail = [];
         }
 
         // Add status label
@@ -320,12 +418,7 @@ export class CertificationService extends BaseService<Certification> {
             jumlah_tidak_lolos: inspectionData.jumlah_tidak_lolos,
             jumlah_belum_lolos: inspectionData.jumlah_belum_lolos,
             pemeriksa_id: inspectionData.pemeriksa_id,
-            persentase_kemurnian: inspectionData.persentase_kemurnian,
-            kadar_air: inspectionData.kadar_air,
-            daya_berkecambah: inspectionData.daya_berkecambah,
-            catatan: inspectionData.catatan,
             file_dokumen_hasil_pemeriksaan: inspectionData.file_dokumen_hasil_pemeriksaan,
-            status_pemeriksaan: approved ? 'lolos' : 'tidak_lolos',
         };
 
         await this.certificationInspectionRepository.create(inspectionRecord);

@@ -43,8 +43,19 @@ export class CertificationRepository extends BaseRepository<Certification> {
         }
 
         if (filters.pemeriksa_contains) {
-            // Search for inspector ID in JSON array
-            (where as any)[Op.and] = Sequelize.literal(`JSON_CONTAINS(pemeriksa, '"${filters.pemeriksa_contains}"')`);
+            // Create a raw where condition for JSON_CONTAINS
+            // (where as any)['id'] = {
+            //     [Op.and]: [
+            //         where.id || {},
+            //         Sequelize.literal(`JSON_CONTAINS(pemeriksa, '"${filters.pemeriksa_contains}"')`)
+            //     ]
+            // };
+            // Search for inspector ID in JSON array using JSON_CONTAINS
+            console.log('Filtering recommendations by pemeriksa_contains:', filters.pemeriksa_contains);
+
+            (where as any)[Op.and] = Sequelize.literal(`JSON_CONTAINS(certification.pemeriksa, '"${filters.pemeriksa_contains}"')`);
+
+            console.log('Using JSON_CONTAINS query for pemeriksa');
         }
 
         if (filters.search) {

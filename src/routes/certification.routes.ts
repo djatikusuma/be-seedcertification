@@ -321,14 +321,6 @@ router.get('/:id', authenticateToken, (req, res) => certificationController.getC
  *                         type: number
  *                       jumlah_belum_lolos:
  *                         type: number
- *                       persentase_kemurnian:
- *                         type: number
- *                       kadar_air:
- *                         type: number
- *                       daya_berkecambah:
- *                         type: number
- *                       catatan:
- *                         type: string
  *                       status_pemeriksaan:
  *                         type: string
  *                         enum: [lolos, tidak_lolos, pending]
@@ -483,18 +475,6 @@ router.post('/:id/scheduling', authenticateToken, (req, res) => certificationCon
  *               jumlah_belum_lolos:
  *                 type: number
  *                 description: Amount not yet processed
- *               persentase_kemurnian:
- *                 type: number
- *                 description: Purity percentage (optional)
- *               kadar_air:
- *                 type: number
- *                 description: Moisture content percentage (optional)
- *               daya_berkecambah:
- *                 type: number
- *                 description: Germination rate percentage (optional)
- *               catatan:
- *                 type: string
- *                 description: Detailed inspection notes (optional)
  *               file_dokumen_hasil_pemeriksaan:
  *                 type: string
  *                 format: binary

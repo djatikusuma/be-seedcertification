@@ -54,27 +54,6 @@ export class CertificationInspection extends Model<CertificationInspectionInterf
     jumlah_belum_lolos!: number;
 
     @AllowNull(true)
-    @Column(DataType.DECIMAL(5, 2))
-    persentase_kemurnian?: number;
-
-    @AllowNull(true)
-    @Column(DataType.DECIMAL(5, 2))
-    kadar_air?: number;
-
-    @AllowNull(true)
-    @Column(DataType.DECIMAL(5, 2))
-    daya_berkecambah?: number;
-
-    @AllowNull(true)
-    @Column(DataType.TEXT)
-    catatan?: string;
-
-    @AllowNull(false)
-    @Default('pending')
-    @Column(DataType.ENUM('lolos', 'tidak_lolos', 'pending'))
-    status_pemeriksaan!: 'lolos' | 'tidak_lolos' | 'pending';
-
-    @AllowNull(true)
     @Column(DataType.STRING(255))
     file_dokumen_hasil_pemeriksaan?: string;
 
