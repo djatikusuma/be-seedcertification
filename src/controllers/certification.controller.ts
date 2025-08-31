@@ -413,7 +413,7 @@ export class CertificationController {
             const userRole = req.user?.role;
 
             // Only inspektur_kepala can validate
-            if (userRole !== 'inspektur_kepala') {
+            if (userRole !== 'inspektur_ketua') {
                 res.status(403).json({
                     success: false,
                     message: 'Anda tidak memiliki akses untuk melakukan validasi',
