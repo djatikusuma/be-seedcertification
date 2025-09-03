@@ -23,6 +23,9 @@ router.get('/role/:role', applicantProfileController.getProfilesByRole.bind(appl
 router.get('/petani', applicantProfileController.getPetaniProfiles.bind(applicantProfileController));
 router.get('/perusahaan', applicantProfileController.getPerusahaanProfiles.bind(applicantProfileController));
 router.get('/user/:userId', applicantProfileController.getProfileByUserId.bind(applicantProfileController));
+router.post('/user/:userId', applicantProfileController.createProfileByUserId.bind(applicantProfileController));
+router.put('/user/:userId', applicantProfileController.updateProfileByUserId.bind(applicantProfileController));
+router.delete('/user/:userId', applicantProfileController.deleteProfileByUserId.bind(applicantProfileController));
 router.get('/nik/:nik', applicantProfileController.getProfileByNik.bind(applicantProfileController));
 router.get('/email/:email', applicantProfileController.getProfileByEmail.bind(applicantProfileController));
 

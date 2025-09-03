@@ -17,6 +17,9 @@ router.delete('/my-profile', internalProfileController.deleteMyProfile.bind(inte
 // Admin routes (for managing all internal profiles)
 router.get('/all', internalProfileController.getAllProfiles.bind(internalProfileController));
 router.get('/user/:userId', internalProfileController.getProfileByUserId.bind(internalProfileController));
+router.post('/user/:userId', internalProfileController.createProfileByUserId.bind(internalProfileController));
+router.put('/user/:userId', internalProfileController.updateProfileByUserId.bind(internalProfileController));
+router.delete('/user/:userId', internalProfileController.deleteProfileByUserId.bind(internalProfileController));
 router.get('/nik/:nik', internalProfileController.getProfileByNik.bind(internalProfileController));
 
 export default router;

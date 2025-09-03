@@ -646,6 +646,174 @@ export class ApplicantProfileController {
             });
         }
     }
+
+    // Admin: Create applicant profile for specific user
+    async createProfileByUserId(req: Request, res: Response): Promise<void> {
+        try {
+            const { userId } = req.params;
+
+            // Validate userId parameter
+            if (!userId || userId.trim() === '') {
+                res.status(400).json({
+                    success: false,
+                    message: 'User ID is required',
+                });
+                return;
+            }
+
+            // Get requesting user's role from the authenticated user
+            const requestingUserRole = (req as any).user?.role?.roleName || 'guest';
+
+            // Add userId to the profile data
+            const profileData = {
+                ...req.body,
+                userId: userId
+            };
+
+            // Create the profile
+            const profile = await this.profileApplicantService.createProfile(profileData);
+
+            // Get the created profile with masking
+            const createdProfile = await this.profileApplicantService.getProfileByUserIdWithMasking(profile.userId, requestingUserRole);
+
+            res.status(201).json({
+                success: true,
+                message: 'Applicant profile created successfully',
+                data: createdProfile,
+                meta: {
+                    masking_applied: true,
+                    masking_level: requestingUserRole
+                }
+            });
+        } catch (error: any) {
+            if (error.message === 'Profile already exists for this user') {
+                res.status(400).json({
+                    success: false,
+                    message: 'Profile already exists for this user'
+                });
+                return;
+            }
+            if (error.message === 'NIK already exists') {
+                res.status(400).json({
+                    success: false,
+                    message: 'NIK already exists'
+                });
+                return;
+            }
+            if (error.message === 'Email already exists') {
+                res.status(400).json({
+                    success: false,
+                    message: 'Email already exists'
+                });
+                return;
+            }
+            console.error('Error creating applicant profile:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to create applicant profile',
+                error: error instanceof Error ? error.message : 'Unknown error'
+            });
+        }
+    }
+
+    // Admin: Update applicant profile for specific user
+    async updateProfileByUserId(req: Request, res: Response): Promise<void> {
+        try {
+            const { userId } = req.params;
+
+            // Validate userId parameter
+            if (!userId || userId.trim() === '') {
+                res.status(400).json({
+                    success: false,
+                    message: 'User ID is required',
+                });
+                return;
+            }
+
+            // Get requesting user's role from the authenticated user
+            const requestingUserRole = (req as any).user?.role?.roleName || 'guest';
+
+            // Update the profile
+            const updatedProfile = await this.profileApplicantService.updateProfileWithMasking(userId, req.body, requestingUserRole);
+
+            if (!updatedProfile) {
+                res.status(404).json({
+                    success: false,
+                    message: 'Applicant profile not found',
+                });
+                return;
+            }
+
+            res.status(200).json({
+                success: true,
+                message: 'Applicant profile updated successfully',
+                data: updatedProfile,
+                meta: {
+                    masking_applied: true,
+                    masking_level: requestingUserRole
+                }
+            });
+        } catch (error: any) {
+            if (error.message === 'NIK already exists') {
+                res.status(400).json({
+                    success: false,
+                    message: 'NIK already exists'
+                });
+                return;
+            }
+            if (error.message === 'Email already exists') {
+                res.status(400).json({
+                    success: false,
+                    message: 'Email already exists'
+                });
+                return;
+            }
+            console.error('Error updating applicant profile:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to update applicant profile',
+                error: error instanceof Error ? error.message : 'Unknown error'
+            });
+        }
+    }
+
+    // Admin: Delete applicant profile for specific user
+    async deleteProfileByUserId(req: Request, res: Response): Promise<void> {
+        try {
+            const { userId } = req.params;
+
+            // Validate userId parameter
+            if (!userId || userId.trim() === '') {
+                res.status(400).json({
+                    success: false,
+                    message: 'User ID is required',
+                });
+                return;
+            }
+
+            const deleted = await this.profileApplicantService.deleteProfile(userId);
+
+            if (!deleted) {
+                res.status(404).json({
+                    success: false,
+                    message: 'Applicant profile not found',
+                });
+                return;
+            }
+
+            res.status(200).json({
+                success: true,
+                message: 'Applicant profile deleted successfully',
+            });
+        } catch (error) {
+            console.error('Error deleting applicant profile:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to delete applicant profile',
+                error: error instanceof Error ? error.message : 'Unknown error',
+            });
+        }
+    }
 }
 
 export default ApplicantProfileController;
