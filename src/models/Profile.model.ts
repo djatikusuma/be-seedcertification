@@ -121,8 +121,18 @@ export class Profile extends Model<ProfileInterface> implements ProfileInterface
         for (const field of this.ENCRYPTED_FIELDS) {
             const value = (instance as any)[field];
             if (value && typeof value === 'string') {
+                // For new instances (create), all fields need to be checked
+                // For existing instances (update), only check changed fields
+                const isNewInstance = instance.isNewRecord;
+                const isDirty = isNewInstance || instance.changed(field as keyof Profile);
+
+                // Only process if it's a new instance or the field has been changed
+                if (!isDirty) {
+                    continue;
+                }
+
                 // Check if already encrypted (new format: encrypted:iv:salt)
-                if (value.includes(':') && value.split(':').length === 3) {
+                if (value.includes(':') && value.split(':').length >= 3) {
                     // Already encrypted in new format, skip
                     continue;
                 }
@@ -138,7 +148,7 @@ export class Profile extends Model<ProfileInterface> implements ProfileInterface
                     // Not JSON, proceed with encryption
                 }
 
-                // Not encrypted, encrypt it
+                // Not encrypted and field is dirty/new, encrypt it
                 const encrypted = CryptoUtil.encrypt(value);
                 (instance as any)[field] = encrypted;
 
