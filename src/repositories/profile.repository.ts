@@ -38,10 +38,10 @@ export class ProfileRepository extends BaseRepository<Profile> {
         if (!profile) {
             return null;
         }
-        
+
         // Use instance update method to trigger hooks
         await profile.update(profileData);
-        
+
         // Reload to get fresh data with relations
         return await this.findByUserId(userId);
     }
