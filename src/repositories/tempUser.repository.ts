@@ -160,45 +160,58 @@ export class TempUserRepository extends BaseRepository<TempUser> {
         perusahaan: number;
         perorangan: number;
     }> {
-        const total = await this.model.count();
+        try {
+            const total = await this.model.count();
 
-        const pending = await this.model.count({
-            where: {
-                verificationStatus: VerificationStatus.PENDING
-            }
-        });
+            const pending = await this.model.count({
+                where: {
+                    verificationStatus: VerificationStatus.PENDING
+                }
+            });
 
-        const approved = await this.model.count({
-            where: {
-                verificationStatus: VerificationStatus.APPROVED
-            }
-        });
+            const approved = await this.model.count({
+                where: {
+                    verificationStatus: VerificationStatus.APPROVED
+                }
+            });
 
-        const rejected = await this.model.count({
-            where: {
-                verificationStatus: VerificationStatus.REJECTED
-            }
-        });
+            const rejected = await this.model.count({
+                where: {
+                    verificationStatus: VerificationStatus.REJECTED
+                }
+            });
 
-        const perusahaan = await this.model.count({
-            where: {
-                userType: UserType.PERUSAHAAN
-            }
-        });
+            const perusahaan = await this.model.count({
+                where: {
+                    userType: UserType.PERUSAHAAN
+                }
+            });
 
-        const perorangan = await this.model.count({
-            where: {
-                userType: UserType.PERORANGAN
-            }
-        });
+            const perorangan = await this.model.count({
+                where: {
+                    userType: UserType.PERORANGAN
+                }
+            });
 
-        return {
-            total,
-            pending,
-            approved,
-            rejected,
-            perusahaan,
-            perorangan
-        };
+            return {
+                total,
+                pending,
+                approved,
+                rejected,
+                perusahaan,
+                perorangan
+            };
+        } catch (error) {
+            console.error('Error getting verification statistics:', error);
+            // Return zero statistics if there's an error (e.g., table doesn't exist)
+            return {
+                total: 0,
+                pending: 0,
+                approved: 0,
+                rejected: 0,
+                perusahaan: 0,
+                perorangan: 0
+            };
+        }
     }
 }

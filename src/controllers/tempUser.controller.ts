@@ -15,7 +15,7 @@ export class TempUserController {
         return [
             body('userType')
                 .isIn([UserType.PERUSAHAAN, UserType.PERORANGAN])
-                .withMessage('Tipe user harus perusahaan atau perorangan'),
+                .withMessage('Tipe user harus perusahaan atau petani'),
             body('nik')
                 .isLength({ min: 16, max: 16 })
                 .withMessage('NIK harus 16 digit')
@@ -169,10 +169,10 @@ export class TempUserController {
                 success: true,
                 message: 'Data berhasil diambil',
                 data: result.data,
-                pagination: {
+                meta: {
                     total: result.total,
                     totalPages: result.totalPages,
-                    currentPage: result.currentPage,
+                    page: result.currentPage,
                     limit
                 }
             });
@@ -233,10 +233,10 @@ export class TempUserController {
                 success: true,
                 message: 'Data berhasil diambil',
                 data: result.data,
-                pagination: {
+                meta: {
                     total: result.total,
                     totalPages: result.totalPages,
-                    currentPage: result.currentPage,
+                    page: result.currentPage,
                     limit
                 },
                 filters

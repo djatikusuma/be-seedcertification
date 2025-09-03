@@ -124,13 +124,14 @@ export class UserService extends BaseService<UserInterface> {
             updateData.password = await bcrypt.hash(updateData.password, salt);
         }
 
-        const [affectedRows] = await User.update(updateData, {
-            where: { id }
-        });
-
-        if (affectedRows === 0) {
+        // Find the user instance first
+        const userInstance = await User.findByPk(id);
+        if (!userInstance) {
             return null;
         }
+
+        // Update using instance method to trigger encryption hooks
+        await userInstance.update(updateData);
 
         // Return updated user with masking
         return this.findByIdWithMasking(id, requestingUserRole);

@@ -83,6 +83,8 @@ export class User extends Model<UserInterface> implements UserInterface {
     // Hook: Encrypt sensitive fields before updating
     @BeforeUpdate
     static encryptBeforeUpdate(instance: User) {
+        console.log('BeforeUpdate hook triggered for User:', instance.id);
+        console.log('Fields to encrypt:', this.ENCRYPTED_FIELDS);
         User.encryptSensitiveFields(instance);
     }
 
@@ -102,12 +104,17 @@ export class User extends Model<UserInterface> implements UserInterface {
      * Encrypt sensitive fields
      */
     private static encryptSensitiveFields(instance: User): void {
+        console.log('Encrypting sensitive fields for user:', instance.id);
+
         for (const field of this.ENCRYPTED_FIELDS) {
             const value = (instance as any)[field];
+            console.log(`Processing field ${field}:`, value ? 'has value' : 'no value');
+
             if (value && typeof value === 'string') {
                 // Check if already encrypted (new format: encrypted:iv:salt)
                 if (value.includes(':') && value.split(':').length === 3) {
                     // Already encrypted in new format, skip
+                    console.log(`Field ${field} already encrypted (new format), skipping`);
                     continue;
                 }
 
@@ -116,6 +123,7 @@ export class User extends Model<UserInterface> implements UserInterface {
                     const parsed = JSON.parse(value);
                     if (parsed.encrypted && parsed.iv && parsed.salt) {
                         // Already encrypted in old format, skip
+                        console.log(`Field ${field} already encrypted (old format), skipping`);
                         continue;
                     }
                 } catch {
@@ -123,15 +131,19 @@ export class User extends Model<UserInterface> implements UserInterface {
                 }
 
                 // Not encrypted, encrypt it
+                console.log(`Encrypting field ${field}`);
                 const encrypted = CryptoUtil.encrypt(value);
                 (instance as any)[field] = encrypted;
 
                 // Create hash for email to enable searching
                 if (field === 'email') {
                     instance.emailHash = CryptoUtil.hash(value.toLowerCase());
+                    console.log(`Created email hash for ${field}`);
                 }
             }
         }
+
+        console.log('Encryption process completed for user:', instance.id);
     }
 
     /**
