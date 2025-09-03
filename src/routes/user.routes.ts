@@ -5,7 +5,11 @@ import { authMiddleware, rbacMiddleware } from '../middleware/auth.middleware';
 const router = Router();
 const userController = new UserController();
 
-// Protect all user management routes with authentication and admin role check
+// Routes accessible by authenticated users
+// Update user by ID - users can update their own data, admin can update any user
+router.put('/:id', authMiddleware(), userController.updateUser);
+
+// Admin-only routes for user management
 router.use(authMiddleware(), rbacMiddleware(['admin', 'inspektur_ketua', 'kepala']));
 
 // CRUD operations for users (admin only)
@@ -13,7 +17,6 @@ router.get('/', userController.getAllUsers);
 router.get('/search', userController.searchUsers); // Must be before /:id route
 router.get('/:id', userController.getUserById);
 router.post('/', userController.createUser);
-router.put('/:id', userController.updateUser);
 router.delete('/:id', userController.deleteUser);
 
 export default router;

@@ -494,7 +494,7 @@ export class UserController {
      * /api/users/{id}:
      *   put:
      *     summary: Update a user
-     *     description: Updates an existing user's information. Admin role required.
+     *     description: Updates an existing user's information. Users can update their own data, or admin role can update any user.
      *     tags: [Users]
      *     security:
      *       - bearerAuth: []
@@ -528,7 +528,7 @@ export class UserController {
      *               roleId:
      *                 type: string
      *                 format: uuid
-     *                 description: ID of the role to assign to the user
+     *                 description: ID of the role to assign to the user (admin only)
      *     responses:
      *       200:
      *         description: User updated successfully
@@ -547,7 +547,7 @@ export class UserController {
      *       401:
      *         description: Unauthorized - User not authenticated
      *       403:
-     *         description: Forbidden - User does not have admin role
+     *         description: Forbidden - User can only update their own data or need admin role
      *       404:
      *         description: User not found
      *       500:
@@ -569,11 +569,40 @@ export class UserController {
             try {
                 const { id } = req.params;
 
-                // Get requesting user's role from the authenticated user
-                const requestingUserRole = (req as any).user?.role?.roleName || 'guest';
+                // Get requesting user's information
+                const requestingUser = (req as any).user;
+                const requestingUserId = requestingUser?.id;
+                const requestingUserRole = requestingUser?.role?.roleName || 'guest';
+                const isAdmin = requestingUserRole === 'admin';
+                const isOwnProfile = requestingUserId === id;
+
+                // Check permission: user can update their own data OR admin can update any user
+                if (!isOwnProfile && !isAdmin) {
+                    return res.status(403).json({
+                        status: 'error',
+                        message: 'Access denied. You can only update your own profile or need admin privileges.'
+                    });
+                }
+
+                // Prepare update data - filter based on permissions
+                let updateData = { ...req.body };
+
+                // Non-admin users cannot update roleId (only admin can change roles)
+                if (!isAdmin && updateData.roleId) {
+                    delete updateData.roleId;
+                    console.log('Non-admin user attempted to change role, field removed from update');
+                }
+
+                // Check if there's any data to update after filtering
+                if (Object.keys(updateData).length === 0) {
+                    return res.status(400).json({
+                        status: 'error',
+                        message: 'No valid fields provided for update'
+                    });
+                }
 
                 // Use service method with masking
-                const updatedUser = await this.userService.updateWithMasking(id, req.body, requestingUserRole);
+                const updatedUser = await this.userService.updateWithMasking(id, updateData, requestingUserRole);
 
                 if (!updatedUser) {
                     return res.status(404).json({ status: 'error', message: 'User not found' });
@@ -584,7 +613,8 @@ export class UserController {
                     data: updatedUser,
                     meta: {
                         masking_applied: true,
-                        masking_level: requestingUserRole
+                        masking_level: requestingUserRole,
+                        updated_by: isOwnProfile ? 'self' : 'admin'
                     }
                 });
             } catch (error: any) {
