@@ -309,7 +309,7 @@ export class AuditTrailController {
                 success: true,
                 message: 'Audit trails berhasil diambil',
                 data: result.data,
-                pagination: result.pagination,
+                meta: result.pagination,
                 filters
             });
 
