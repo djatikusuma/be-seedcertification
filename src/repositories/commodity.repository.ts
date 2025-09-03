@@ -57,11 +57,11 @@ export class CommodityRepository extends BaseRepository<Commodity> {
         });
     }
 
-    async isCodeExists(code: string, excludeUuid?: string): Promise<boolean> {
+    async isCodeExists(code: string, excludeId?: string): Promise<boolean> {
         const where: WhereOptions = { code };
 
-        if (excludeUuid) {
-            where.uuid = { [Op.ne]: excludeUuid };
+        if (excludeId) {
+            where.id = { [Op.ne]: excludeId };
         }
 
         const commodity = await this.model.findOne({ where });

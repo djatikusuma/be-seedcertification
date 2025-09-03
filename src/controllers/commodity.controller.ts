@@ -13,10 +13,6 @@ import { CommodityFilterOptions } from '../repositories/commodity.repository';
  *           type: string
  *           format: uuid
  *           description: Primary key
- *         uuid:
- *           type: string
- *           format: uuid
- *           description: Commodity UUID
  *         code:
  *           type: string
  *           description: Commodity code (unique)
@@ -216,7 +212,14 @@ export class CommodityController {
             res.status(200).json({
                 success: true,
                 message: 'Commodities retrieved successfully',
-                data: result,
+                status: 'success',
+                data: result.rows,
+                meta: {
+                    total: result.count,
+                    totalPages: result.totalPages,
+                    currentPage: result.currentPage,
+                    limit: limit
+                }
             });
         } catch (error) {
             res.status(500).json({
