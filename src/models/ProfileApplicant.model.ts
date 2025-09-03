@@ -10,7 +10,7 @@ import { DataMaskingUtil, MaskingType, MaskingOptions } from '../utils/masking.u
 })
 export class ProfileApplicant extends Model<ProfileApplicantInterface> implements ProfileApplicantInterface {
     // Define which fields should be automatically encrypted
-    private static readonly ENCRYPTED_FIELDS = ['nik', 'npwp', 'email', 'namaPemohon', 'telepon', 'alamatPemohon', 'alamatPerusahaan', 'nikKuasa', 'namaKuasa'];
+    private static readonly ENCRYPTED_FIELDS = ['nik', 'npwp', 'email', 'namaPemohon', 'telepon', 'alamatPemohon', 'alamatPerusahaan', 'nikKuasa', 'namaKuasa', 'lokasiPerbenihan'];
 
     @Column({
         type: DataType.UUID,
@@ -175,6 +175,16 @@ export class ProfileApplicant extends Model<ProfileApplicantInterface> implement
         for (const field of this.ENCRYPTED_FIELDS) {
             const value = (instance as any)[field];
             if (value && typeof value === 'string') {
+                // For new instances (create), all fields need to be checked
+                // For existing instances (update), only check changed fields
+                const isNewInstance = instance.isNewRecord;
+                const isDirty = isNewInstance || instance.changed(field as keyof ProfileApplicant);
+
+                // Only process if it's a new instance or the field has been changed
+                if (!isDirty) {
+                    continue;
+                }
+
                 // Check if already encrypted (new format: encrypted:iv:salt)
                 if (value.includes(':') && value.split(':').length === 3) {
                     // Already encrypted in new format, skip

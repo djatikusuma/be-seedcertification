@@ -63,15 +63,20 @@ export class ProfileApplicantRepository extends BaseRepository<ProfileApplicant>
     }
 
     async updateByUserId(userId: string, profileData: Partial<ProfileApplicant>): Promise<ProfileApplicant | null> {
-        const [affectedCount] = await this.model.update(profileData, {
-            where: { userId },
+        // Find the profile instance first
+        const profile = await this.model.findOne({
+            where: { userId }
         });
 
-        if (affectedCount > 0) {
-            return await this.findByUserId(userId);
+        if (!profile) {
+            return null;
         }
 
-        return null;
+        // Use instance update method to trigger hooks
+        await profile.update(profileData);
+
+        // Reload to get fresh data with relations
+        return await this.findByUserId(userId);
     }
 
     async deleteByUserId(userId: string): Promise<boolean> {
