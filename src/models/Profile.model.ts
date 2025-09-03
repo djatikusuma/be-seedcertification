@@ -10,7 +10,7 @@ import { DataMaskingUtil, MaskingType, MaskingOptions } from '../utils/masking.u
 })
 export class Profile extends Model<ProfileInterface> implements ProfileInterface {
     // Define which fields should be automatically encrypted
-    private static readonly ENCRYPTED_FIELDS = ['nama', 'nik', 'telepon', 'alamat'];
+    private static readonly ENCRYPTED_FIELDS = ['nama', 'nik', 'telepon', 'alamat', 'nip', 'jabatan', 'pangkat', 'golongan'];
 
     @Column({
         type: DataType.UUID,
