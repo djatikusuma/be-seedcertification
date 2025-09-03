@@ -10,6 +10,7 @@ router.use(authMiddleware(), rbacMiddleware(['admin', 'inspektur_ketua', 'kepala
 
 // CRUD operations for users (admin only)
 router.get('/', userController.getAllUsers);
+router.get('/search', userController.searchUsers); // Must be before /:id route
 router.get('/:id', userController.getUserById);
 router.post('/', userController.createUser);
 router.put('/:id', userController.updateUser);

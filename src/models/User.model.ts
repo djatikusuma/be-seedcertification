@@ -251,12 +251,12 @@ export class User extends Model<UserInterface> implements UserInterface {
                 emailVisibleChars: 2
             });
         }
-        if (sanitizedData.name) {
-            sanitizedData.name = DataMaskingUtil.mask(sanitizedData.name, MaskingType.NAME, {
-                nameKeepFirstChar: true,
-                nameKeepLastChar: false
-            });
-        }
+        // if (sanitizedData.name) {
+        //     sanitizedData.name = DataMaskingUtil.mask(sanitizedData.name, MaskingType.NAME, {
+        //         nameKeepFirstChar: true,
+        //         nameKeepLastChar: false
+        //     });
+        // }
         return sanitizedData;
         // }
     }

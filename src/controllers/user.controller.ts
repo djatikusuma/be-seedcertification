@@ -59,17 +59,157 @@ export class UserController {
     private userService = new UserService();
 
     /**
+    * @swagger
+    * /api/users:
+    *   get:
+    *     summary: Get all users with pagination
+    *     description: Retrieves all users with pagination. Admin role required. Data is masked based on requesting user's role.
+    *     tags: [Users]
+    *     security:
+    *       - bearerAuth: []
+    *     parameters:
+    *       - in: query
+    *         name: page
+    *         schema:
+    *           type: integer
+    *           minimum: 1
+    *           default: 1
+    *         description: Page number
+    *       - in: query
+    *         name: limit
+    *         schema:
+    *           type: integer
+    *           minimum: 1
+    *           maximum: 100
+    *           default: 10
+    *         description: Number of items per page
+    *     responses:
+    *       200:
+    *         description: Users data retrieved successfully
+    *         content:
+    *           application/json:
+    *             schema:
+    *               type: object
+    *               properties:
+    *                 status:
+    *                   type: string
+    *                   example: success
+    *                 data:
+    *                   type: array
+    *                   items:
+    *                     $ref: '#/components/schemas/User'
+    *                 meta:
+    *                   type: object
+    *                   properties:
+    *                     total:
+    *                       type: integer
+    *                       description: Total number of users
+    *                     totalPages:
+    *                       type: integer
+    *                       description: Total number of pages
+    *                     currentPage:
+    *                       type: integer
+    *                       description: Current page number
+    *                     limit:
+    *                       type: integer
+    *                       description: Items per page
+    *                     masking_applied:
+    *                       type: boolean
+    *                       example: true
+    *                     masking_level:
+    *                       type: string
+    *                       example: admin
+    *       401:
+    *         description: Unauthorized - User not authenticated
+    *       403:
+    *         description: Forbidden - User does not have admin role
+    *       500:
+    *         description: Server error
+    */
+    getAllUsers = async (req: Request, res: Response) => {
+        try {
+            // Get requesting user's role from the authenticated user
+            const requestingUserRole = (req as any).user?.role?.roleName || 'guest';
+
+            // Parse pagination parameters
+            const page = parseInt(req.query.page as string) || 1;
+            const limit = Math.min(parseInt(req.query.limit as string) || 10, 100); // Max 100 items per page
+
+            // Validate pagination parameters
+            if (page < 1) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Page number must be greater than 0'
+                });
+            }
+
+            if (limit < 1) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Limit must be greater than 0'
+                });
+            }
+
+            // Use service method with pagination and masking
+            const result = await this.userService.findAllWithMasking(requestingUserRole, page, limit);
+
+            res.status(200).json({
+                status: 'success',
+                data: result.users,
+                meta: {
+                    total: result.total,
+                    totalPages: result.totalPages,
+                    currentPage: result.currentPage,
+                    limit: limit,
+                    masking_applied: true,
+                    masking_level: requestingUserRole
+                }
+            });
+        } catch (error) {
+            console.error('Error fetching users:', error);
+            res.status(500).json({
+                status: 'error',
+                message: 'Failed to fetch users',
+                error: error instanceof Error ? error.message : 'Unknown error'
+            });
+        }
+    };
+
+    /**
      * @swagger
-     * /api/users:
+     * /api/users/search:
      *   get:
-     *     summary: Get all users
-     *     description: Retrieves a list of all users. Admin role required.
+     *     summary: Search users by name or email with pagination
+     *     description: Search users by name or email with pagination. Admin role required. Data is masked based on requesting user's role.
      *     tags: [Users]
      *     security:
      *       - bearerAuth: []
+     *     parameters:
+     *       - in: query
+     *         name: q
+     *         required: true
+     *         schema:
+     *           type: string
+     *           minLength: 2
+     *         description: Search term (name or email)
+     *       - in: query
+     *         name: page
+     *         schema:
+     *           type: integer
+     *           minimum: 1
+     *           default: 1
+     *         description: Page number
+     *       - in: query
+     *         name: limit
+     *         schema:
+     *           type: integer
+     *           minimum: 1
+     *           maximum: 100
+     *           default: 10
+     *         description: Number of items per page
      *     responses:
      *       200:
-     *         description: A list of users
+     *         description: Users search results retrieved successfully
      *         content:
      *           application/json:
      *             schema:
@@ -82,6 +222,32 @@ export class UserController {
      *                   type: array
      *                   items:
      *                     $ref: '#/components/schemas/User'
+     *                 meta:
+     *                   type: object
+     *                   properties:
+     *                     total:
+     *                       type: integer
+     *                       description: Total number of matching users
+     *                     totalPages:
+     *                       type: integer
+     *                       description: Total number of pages
+     *                     currentPage:
+     *                       type: integer
+     *                       description: Current page number
+     *                     limit:
+     *                       type: integer
+     *                       description: Items per page
+     *                     searchTerm:
+     *                       type: string
+     *                       description: Search term used
+     *                     masking_applied:
+     *                       type: boolean
+     *                       example: true
+     *                     masking_level:
+     *                       type: string
+     *                       example: admin
+     *       400:
+     *         description: Bad request - Invalid search parameters
      *       401:
      *         description: Unauthorized - User not authenticated
      *       403:
@@ -89,26 +255,67 @@ export class UserController {
      *       500:
      *         description: Server error
      */
-    getAllUsers = async (req: Request, res: Response) => {
+    searchUsers = async (req: Request, res: Response) => {
         try {
             // Get requesting user's role from the authenticated user
             const requestingUserRole = (req as any).user?.role?.roleName || 'guest';
 
-            // Use service method with masking
-            const maskedUsers = await this.userService.findAllWithMasking(requestingUserRole);
+            // Parse search and pagination parameters
+            const searchTerm = req.query.q as string;
+            const page = parseInt(req.query.page as string) || 1;
+            const limit = Math.min(parseInt(req.query.limit as string) || 10, 100); // Max 100 items per page
+
+            // Validate search term
+            if (!searchTerm || searchTerm.trim().length < 2) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Search term must be at least 2 characters long'
+                });
+            }
+
+            // Validate pagination parameters
+            if (page < 1) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Page number must be greater than 0'
+                });
+            }
+
+            if (limit < 1) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Limit must be greater than 0'
+                });
+            }
+
+            // Use service method with search, pagination and masking
+            const result = await this.userService.searchUsersWithMasking(
+                searchTerm.trim(),
+                requestingUserRole,
+                page,
+                limit
+            );
 
             res.status(200).json({
                 status: 'success',
-                data: maskedUsers,
+                data: result.users,
                 meta: {
-                    total: maskedUsers.length,
+                    total: result.total,
+                    totalPages: result.totalPages,
+                    currentPage: result.currentPage,
+                    limit: limit,
+                    searchTerm: searchTerm.trim(),
                     masking_applied: true,
                     masking_level: requestingUserRole
                 }
             });
         } catch (error) {
-            console.error('Error fetching users:', error);
-            res.status(500).json({ status: 'error', message: 'Failed to fetch users' });
+            console.error('Error searching users:', error);
+            res.status(500).json({
+                status: 'error',
+                message: 'Failed to search users',
+                error: error instanceof Error ? error.message : 'Unknown error'
+            });
         }
     };
 

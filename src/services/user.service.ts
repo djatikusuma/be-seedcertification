@@ -3,6 +3,7 @@ import { UserRepository } from '../repositories/user.repository';
 import { BaseService } from './base.service';
 import { User } from '../models/User.model';
 import bcrypt from 'bcryptjs';
+import { Op } from 'sequelize';
 
 export class UserService extends BaseService<UserInterface> {
     private userRepository: UserRepository;
@@ -18,12 +19,67 @@ export class UserService extends BaseService<UserInterface> {
         return await User.findByEmail(email);
     }
 
-    async findAllWithMasking(requestingUserRole: string = 'guest'): Promise<Partial<UserInterface>[]> {
-        const users = await User.findAll({
+    async findAllWithMasking(requestingUserRole: string = 'guest', page: number = 1, limit: number = 10): Promise<{
+        users: Partial<UserInterface>[];
+        total: number;
+        totalPages: number;
+        currentPage: number;
+    }> {
+        const offset = (page - 1) * limit;
+
+        const { count, rows } = await User.findAndCountAll({
             attributes: { exclude: ['password'] },
-            include: ['role']
+            include: ['role'],
+            limit: limit,
+            offset: offset,
+            order: [['createdAt', 'DESC']]
         });
-        return User.applyMaskingToArray(users, requestingUserRole);
+
+        const maskedUsers = User.applyMaskingToArray(rows, requestingUserRole);
+
+        return {
+            users: maskedUsers,
+            total: count,
+            totalPages: Math.ceil(count / limit),
+            currentPage: page
+        };
+    }
+
+    async searchUsersWithMasking(
+        searchTerm: string,
+        requestingUserRole: string = 'guest',
+        page: number = 1,
+        limit: number = 10
+    ): Promise<{
+        users: Partial<UserInterface>[];
+        total: number;
+        totalPages: number;
+        currentPage: number;
+    }> {
+        const offset = (page - 1) * limit;
+
+        const { count, rows } = await User.findAndCountAll({
+            attributes: { exclude: ['password'] },
+            include: ['role'],
+            where: {
+                [Op.or]: [
+                    { name: { [Op.like]: `%${searchTerm}%` } },
+                    { email: { [Op.like]: `%${searchTerm}%` } }
+                ]
+            },
+            limit: limit,
+            offset: offset,
+            order: [['createdAt', 'DESC']]
+        });
+
+        const maskedUsers = User.applyMaskingToArray(rows, requestingUserRole);
+
+        return {
+            users: maskedUsers,
+            total: count,
+            totalPages: Math.ceil(count / limit),
+            currentPage: page
+        };
     }
 
     async findByIdWithMasking(id: string, requestingUserRole: string = 'guest'): Promise<Partial<UserInterface> | null> {
