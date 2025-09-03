@@ -269,6 +269,16 @@ export class CommodityController {
     getCommodityById = async (req: Request, res: Response): Promise<void> => {
         try {
             const { id } = req.params;
+
+            // Validate id parameter
+            if (!id || id.trim() === '') {
+                res.status(400).json({
+                    success: false,
+                    message: 'Commodity ID is required',
+                });
+                return;
+            }
+
             const commodity = await this.commodityService.findById(id);
 
             if (!commodity) {
@@ -330,13 +340,55 @@ export class CommodityController {
      */
     createCommodity = async (req: Request, res: Response): Promise<void> => {
         try {
-            const commodityData: CreateCommodityDto = req.body;
-
-            // Basic validation
-            if (!commodityData.code || !commodityData.nama) {
+            // Check if request body exists
+            if (!req.body) {
                 res.status(400).json({
                     success: false,
-                    message: 'Code and nama are required',
+                    message: 'Request body is required',
+                });
+                return;
+            }
+
+            const commodityData: CreateCommodityDto = req.body;
+
+            // Basic validation for required fields
+            if (!commodityData.code || commodityData.code.trim() === '') {
+                res.status(400).json({
+                    success: false,
+                    message: 'Code is required and cannot be empty',
+                });
+                return;
+            }
+
+            if (!commodityData.nama || commodityData.nama.trim() === '') {
+                res.status(400).json({
+                    success: false,
+                    message: 'Nama is required and cannot be empty',
+                });
+                return;
+            }
+
+            // Validate data types
+            if (commodityData.smsb !== undefined && (!Number.isInteger(commodityData.smsb) || commodityData.smsb < 0)) {
+                res.status(400).json({
+                    success: false,
+                    message: 'SMSB must be a non-negative integer',
+                });
+                return;
+            }
+
+            if (commodityData.smb !== undefined && (!Number.isInteger(commodityData.smb) || commodityData.smb < 0)) {
+                res.status(400).json({
+                    success: false,
+                    message: 'SMB must be a non-negative integer',
+                });
+                return;
+            }
+
+            if (commodityData.is_active !== undefined && typeof commodityData.is_active !== 'boolean') {
+                res.status(400).json({
+                    success: false,
+                    message: 'is_active must be a boolean',
                 });
                 return;
             }
@@ -412,7 +464,68 @@ export class CommodityController {
     updateCommodity = async (req: Request, res: Response): Promise<void> => {
         try {
             const { id } = req.params;
+
+            // Check if request body exists
+            if (!req.body) {
+                res.status(400).json({
+                    success: false,
+                    message: 'Request body is required',
+                });
+                return;
+            }
+
             const updateData: UpdateCommodityDto = req.body;
+
+            // Check if at least one field is provided for update
+            const hasUpdateData = Object.keys(updateData).length > 0;
+            if (!hasUpdateData) {
+                res.status(400).json({
+                    success: false,
+                    message: 'At least one field must be provided for update',
+                });
+                return;
+            }
+
+            // Validate individual fields if provided
+            if (updateData.code !== undefined && (!updateData.code || updateData.code.trim() === '')) {
+                res.status(400).json({
+                    success: false,
+                    message: 'Code cannot be empty',
+                });
+                return;
+            }
+
+            if (updateData.nama !== undefined && (!updateData.nama || updateData.nama.trim() === '')) {
+                res.status(400).json({
+                    success: false,
+                    message: 'Nama cannot be empty',
+                });
+                return;
+            }
+
+            if (updateData.smsb !== undefined && (!Number.isInteger(updateData.smsb) || updateData.smsb < 0)) {
+                res.status(400).json({
+                    success: false,
+                    message: 'SMSB must be a non-negative integer',
+                });
+                return;
+            }
+
+            if (updateData.smb !== undefined && (!Number.isInteger(updateData.smb) || updateData.smb < 0)) {
+                res.status(400).json({
+                    success: false,
+                    message: 'SMB must be a non-negative integer',
+                });
+                return;
+            }
+
+            if (updateData.is_active !== undefined && typeof updateData.is_active !== 'boolean') {
+                res.status(400).json({
+                    success: false,
+                    message: 'is_active must be a boolean',
+                });
+                return;
+            }
 
             const commodity = await this.commodityService.updateCommodity(id, updateData);
 
@@ -483,6 +596,16 @@ export class CommodityController {
     deleteCommodity = async (req: Request, res: Response): Promise<void> => {
         try {
             const { id } = req.params;
+
+            // Validate id parameter
+            if (!id || id.trim() === '') {
+                res.status(400).json({
+                    success: false,
+                    message: 'Commodity ID is required',
+                });
+                return;
+            }
+
             const deleted = await this.commodityService.delete(id);
 
             if (!deleted) {
@@ -559,12 +682,32 @@ export class CommodityController {
     toggleCommodityStatus = async (req: Request, res: Response): Promise<void> => {
         try {
             const { id } = req.params;
+
+            // Check if request body exists
+            if (!req.body) {
+                res.status(400).json({
+                    success: false,
+                    message: 'Request body is required',
+                });
+                return;
+            }
+
             const { is_active } = req.body;
 
+            // Check if is_active is provided
+            if (is_active === undefined || is_active === null) {
+                res.status(400).json({
+                    success: false,
+                    message: 'is_active field is required',
+                });
+                return;
+            }
+
+            // Check if is_active is boolean
             if (typeof is_active !== 'boolean') {
                 res.status(400).json({
                     success: false,
-                    message: 'is_active must be a boolean',
+                    message: 'is_active must be a boolean (true or false)',
                 });
                 return;
             }
