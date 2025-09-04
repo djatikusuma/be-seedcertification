@@ -6,7 +6,7 @@ const router = Router();
 const roleController = new RoleController();
 
 // Protect all role routes with authentication and admin role check
-router.use(authMiddleware(), rbacMiddleware(['admin']));
+router.use(authMiddleware(), rbacMiddleware(['admin', 'inspektur_ketua', 'verifikatur']));
 
 // CRUD operations for roles
 router.get('/', roleController.getAllRoles);

@@ -64,4 +64,46 @@ export class UserRepository extends BaseRepository<User> {
             include: ['role', 'profile', 'profileApplicant']
         });
     }
+
+    /**
+     * Find users by role with pagination
+     */
+    async findByRole(
+        roleName: string,
+        requestingUserRole: string = 'guest',
+        page: number = 1,
+        limit: number = 10
+    ): Promise<{
+        users: Partial<UserInterface>[];
+        total: number;
+        totalPages: number;
+        currentPage: number;
+    }> {
+        const offset = (page - 1) * limit;
+
+        const { count, rows } = await User.findAndCountAll({
+            attributes: { exclude: ['password'] },
+            include: [
+                {
+                    model: require('../models/Role.model').default,
+                    as: 'role',
+                    where: {
+                        roleName: roleName
+                    }
+                }
+            ],
+            limit: limit,
+            offset: offset,
+            order: [['createdAt', 'DESC']]
+        });
+
+        const maskedUsers = User.applyMaskingToArray(rows, requestingUserRole);
+
+        return {
+            users: maskedUsers,
+            total: count,
+            totalPages: Math.ceil(count / limit),
+            currentPage: page
+        };
+    }
 }

@@ -62,8 +62,8 @@ export class UserController {
     * @swagger
     * /api/users:
     *   get:
-    *     summary: Get all users with pagination
-    *     description: Retrieves all users with pagination. Admin role required. Data is masked based on requesting user's role.
+    *     summary: Get all users with pagination and filtering
+    *     description: Retrieves all users with pagination and role-based filtering. Admin role required. Data is masked based on requesting user's role.
     *     tags: [Users]
     *     security:
     *       - bearerAuth: []
@@ -83,6 +83,12 @@ export class UserController {
     *           maximum: 100
     *           default: 10
     *         description: Number of items per page
+    *       - in: query
+    *         name: role
+    *         schema:
+    *           type: string
+    *           enum: [admin, user, petani, perusahaan, inspektur, inspektur_ketua, verifikatur, kepala]
+    *         description: Filter users by role name. Use GET /api/roles to see all available roles.
     *     responses:
     *       200:
     *         description: Users data retrieved successfully
@@ -113,6 +119,11 @@ export class UserController {
     *                     limit:
     *                       type: integer
     *                       description: Items per page
+    *                     roleFilter:
+    *                       type: string
+    *                       nullable: true
+    *                       description: Applied role filter (null if no filter)
+    *                       example: admin
     *                     masking_applied:
     *                       type: boolean
     *                       example: true
@@ -135,6 +146,9 @@ export class UserController {
             const page = parseInt(req.query.page as string) || 1;
             const limit = Math.min(parseInt(req.query.limit as string) || 10, 100); // Max 100 items per page
 
+            // Parse filter parameters
+            const roleFilter = req.query.role as string || null;
+
             // Validate pagination parameters
             if (page < 1) {
                 return res.status(400).json({
@@ -150,8 +164,8 @@ export class UserController {
                 });
             }
 
-            // Use service method with pagination and masking
-            const result = await this.userService.findAllWithMasking(requestingUserRole, page, limit);
+            // Use service method with pagination, filtering and masking
+            const result = await this.userService.findAllWithMasking(requestingUserRole, page, limit, roleFilter);
 
             res.status(200).json({
                 status: 'success',
@@ -161,6 +175,7 @@ export class UserController {
                     totalPages: result.totalPages,
                     currentPage: result.currentPage,
                     limit: limit,
+                    roleFilter: roleFilter,
                     masking_applied: true,
                     masking_level: requestingUserRole
                 }

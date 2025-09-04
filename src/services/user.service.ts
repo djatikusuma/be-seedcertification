@@ -19,7 +19,12 @@ export class UserService extends BaseService<UserInterface> {
         return await User.findByEmail(email);
     }
 
-    async findAllWithMasking(requestingUserRole: string = 'guest', page: number = 1, limit: number = 10): Promise<{
+    async findAllWithMasking(
+        requestingUserRole: string = 'guest',
+        page: number = 1,
+        limit: number = 10,
+        roleFilter?: string | null
+    ): Promise<{
         users: Partial<UserInterface>[];
         total: number;
         totalPages: number;
@@ -27,9 +32,25 @@ export class UserService extends BaseService<UserInterface> {
     }> {
         const offset = (page - 1) * limit;
 
+        // Build where clause for role filtering
+        const whereClause: any = {};
+        const includeClause: any = ['role'];
+
+        // If role filter is provided, add it to include clause with where condition
+        if (roleFilter) {
+            includeClause[0] = {
+                model: require('../models/Role.model').default,
+                as: 'role',
+                where: {
+                    roleName: roleFilter
+                }
+            };
+        }
+
         const { count, rows } = await User.findAndCountAll({
             attributes: { exclude: ['password'] },
-            include: ['role'],
+            include: includeClause,
+            where: whereClause,
             limit: limit,
             offset: offset,
             order: [['createdAt', 'DESC']]
