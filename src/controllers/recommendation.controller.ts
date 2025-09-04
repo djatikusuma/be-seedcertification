@@ -240,7 +240,13 @@ export class RecommendationController {
             res.status(200).json({
                 success: true,
                 message: 'Recommendations retrieved successfully',
-                data: result,
+                data: result.rows,
+                meta: {
+                    total: result.count,
+                    totalPage: result.totalPages,
+                    currentPage: result.currentPage,
+                    limit: limit
+                }
             });
         } catch (error) {
             res.status(500).json({

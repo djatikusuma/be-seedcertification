@@ -262,6 +262,7 @@ export class RecommendationService extends BaseService<Recommendation> {
                         status: rec.status,
                         status_text: rec.getStatusText(),
                         created_at: rec.createdAt,
+                        updated_at: rec.updatedAt
                     };
                 }));
 
@@ -289,6 +290,7 @@ export class RecommendationService extends BaseService<Recommendation> {
                     const processedRec = await this.processRecommendationData(rec);
                     return {
                         id: processedRec.id,
+                        nomor_rekomendasi: rec.nomor_rekomendasi,
                         pemohon: processedRec.pemohon ? {
                             id: processedRec.pemohon.id,
                             namaPemohon: processedRec.pemohon.namaPemohon,
@@ -300,6 +302,7 @@ export class RecommendationService extends BaseService<Recommendation> {
                         status: processedRec.status,
                         status_text: rec.getStatusText(),
                         created_at: processedRec.created_at,
+                        updated_at: processedRec.updated_at,
                     };
                 }));
 
@@ -330,6 +333,7 @@ export class RecommendationService extends BaseService<Recommendation> {
                     const processedRec = await this.processRecommendationData(rec);
                     return {
                         id: processedRec.id,
+                        nomor_rekomendasi: rec.nomor_rekomendasi,
                         pemohon: processedRec.pemohon ? {
                             id: processedRec.pemohon.id,
                             namaPemohon: processedRec.pemohon.namaPemohon,
@@ -342,6 +346,7 @@ export class RecommendationService extends BaseService<Recommendation> {
                         status: processedRec.status,
                         status_text: rec.getStatusText(),
                         created_at: processedRec.created_at,
+                        updated_at: processedRec.updated_at,
                     };
                 }));
 
