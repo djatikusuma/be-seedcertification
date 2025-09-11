@@ -8,8 +8,9 @@ export interface RecommendationInterface extends BaseEntityInterface {
     pemohon_id: string;
     seedsource_id?: string;
     verifikator_id?: string;
-    inspektur_kepala_id?: string;
+    inspektur_ketua_id?: string;
     inspektur_id?: string;
+    kepala_id?: string;
     nomor_rekomendasi?: string;
     surat_rekomendasi?: string;
     tanggal_surat_rekomendasi?: Date;
@@ -99,10 +100,10 @@ export class Recommendation extends Model<RecommendationInterface> implements Re
         type: DataType.UUID,
         allowNull: true,
     })
-    inspektur_kepala_id?: string;
+    inspektur_ketua_id?: string;
 
-    @BelongsTo(() => User, 'inspektur_kepala_id')
-    inspekturKepala!: User;
+    @BelongsTo(() => User, 'inspektur_ketua_id')
+    inspekturKetua!: User;
 
     @Index
     @ForeignKey(() => User)
@@ -114,6 +115,17 @@ export class Recommendation extends Model<RecommendationInterface> implements Re
 
     @BelongsTo(() => User, 'inspektur_id')
     inspektur!: User;
+
+    @Index
+    @ForeignKey(() => User)
+    @Column({
+        type: DataType.UUID,
+        allowNull: true,
+    })
+    kepala_id?: string;
+
+    @BelongsTo(() => User, 'kepala_id')
+    kepala!: User;
 
     @Index
     @Column({

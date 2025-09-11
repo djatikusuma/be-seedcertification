@@ -34,7 +34,7 @@ interface MulterRequest extends Request {
  *           type: string
  *           format: uuid
  *           description: ID of user who performed verification
- *         inspektur_kepala_id:
+ *         inspektur_ketua_id:
  *           type: string
  *           format: uuid
  *           description: ID of head inspector user for scheduling
@@ -42,6 +42,10 @@ interface MulterRequest extends Request {
  *           type: string
  *           format: uuid
  *           description: ID of inspector user who performed inspection
+ *         kepala_id:
+ *           type: string
+ *           format: uuid
+ *           description: ID of head user who published the recommendation
  *         nomor_rekomendasi:
  *           type: string
  *         surat_rekomendasi:
@@ -571,7 +575,7 @@ export class RecommendationController {
 
             const schedulingData: SchedulingDto = {
                 ...req.body,
-                inspektur_kepala_id: user.id
+                inspektur_ketua_id: user.id
             };
 
             if (!schedulingData.tanggal_pemeriksaan || !schedulingData.pemeriksa || !Array.isArray(schedulingData.pemeriksa)) {
@@ -744,6 +748,7 @@ export class RecommendationController {
             const publishData: PublishDto = {
                 nomor_rekomendasi,
                 surat_rekomendasi,
+                kepala_id: user.id,
             };
 
             const recommendation = await this.recommendationService.publishRecommendation(id, publishData);

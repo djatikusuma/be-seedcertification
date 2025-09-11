@@ -23,7 +23,7 @@ export const up = async (queryInterface: QueryInterface): Promise<void> => {
         onDelete: 'SET NULL',
     });
 
-    await queryInterface.addColumn('recommendations', 'inspektur_kepala_id', {
+    await queryInterface.addColumn('recommendations', 'inspektur_ketua_id', {
         type: DataTypes.UUID,
         allowNull: true,
         references: {
@@ -54,8 +54,8 @@ export const up = async (queryInterface: QueryInterface): Promise<void> => {
         name: 'idx_recommendations_verifikator_id'
     });
 
-    await queryInterface.addIndex('recommendations', ['inspektur_kepala_id'], {
-        name: 'idx_recommendations_inspektur_kepala_id'
+    await queryInterface.addIndex('recommendations', ['inspektur_ketua_id'], {
+        name: 'idx_recommendations_inspektur_ketua_id'
     });
 
     await queryInterface.addIndex('recommendations', ['inspektur_id'], {
@@ -64,13 +64,13 @@ export const up = async (queryInterface: QueryInterface): Promise<void> => {
 }; export const down = async (queryInterface: QueryInterface): Promise<void> => {
     // Remove indexes first
     await queryInterface.removeIndex('recommendations', 'idx_recommendations_inspektur_id');
-    await queryInterface.removeIndex('recommendations', 'idx_recommendations_inspektur_kepala_id');
+    await queryInterface.removeIndex('recommendations', 'idx_recommendations_inspektur_ketua_id');
     await queryInterface.removeIndex('recommendations', 'idx_recommendations_verifikator_id');
     await queryInterface.removeIndex('recommendations', 'idx_recommendations_seedsource_id');
 
     // Remove columns
     await queryInterface.removeColumn('recommendations', 'inspektur_id');
-    await queryInterface.removeColumn('recommendations', 'inspektur_kepala_id');
+    await queryInterface.removeColumn('recommendations', 'inspektur_ketua_id');
     await queryInterface.removeColumn('recommendations', 'verifikator_id');
     await queryInterface.removeColumn('recommendations', 'seedsource_id');
 };

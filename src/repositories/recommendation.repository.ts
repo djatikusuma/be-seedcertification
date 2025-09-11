@@ -117,7 +117,7 @@ export class RecommendationRepository extends BaseRepository<Recommendation> {
                 },
                 {
                     model: User,
-                    as: 'inspekturKepala',
+                    as: 'inspekturKetua',
                     required: false,
                     attributes: ['id', 'name', 'email'],
                     include: [
@@ -131,6 +131,19 @@ export class RecommendationRepository extends BaseRepository<Recommendation> {
                 {
                     model: User,
                     as: 'inspektur',
+                    required: false,
+                    attributes: ['id', 'name', 'email'],
+                    include: [
+                        {
+                            model: Role,
+                            as: 'role',
+                            attributes: ['id', 'roleName'],
+                        },
+                    ],
+                },
+                {
+                    model: User,
+                    as: 'kepala',
                     required: false,
                     attributes: ['id', 'name', 'email'],
                     include: [

@@ -28,7 +28,7 @@ export interface VerificationDto {
 export interface SchedulingDto {
     tanggal_pemeriksaan: Date;
     pemeriksa: string[];
-    inspektur_kepala_id?: string;
+    inspektur_ketua_id?: string;
 }
 
 export interface InspectionDto {
@@ -40,6 +40,7 @@ export interface InspectionDto {
 export interface PublishDto {
     nomor_rekomendasi: string;
     surat_rekomendasi: string;
+    kepala_id?: string;
 }
 
 export class RecommendationService extends BaseService<Recommendation> {
@@ -168,13 +169,13 @@ export class RecommendationService extends BaseService<Recommendation> {
                 console.log('Decrypted verifikator name:', processedData.verifikator.name);
             }
 
-            // Decrypt inspektur kepala data if exists
-            if (processedData.inspekturKepala) {
-                console.log('Decrypting inspektur kepala data for:', processedData.inspekturKepala.id);
-                const inspekturKepalaInstance = User.build(processedData.inspekturKepala);
-                inspekturKepalaInstance.isNewRecord = false;
-                processedData.inspekturKepala = this.decryptUserData(inspekturKepalaInstance).toJSON();
-                console.log('Decrypted inspektur kepala name:', processedData.inspekturKepala.name);
+            // Decrypt inspektur ketua data if exists
+            if (processedData.inspekturKetua) {
+                console.log('Decrypting inspektur ketua data for:', processedData.inspekturKetua.id);
+                const inspekturKetuaInstance = User.build(processedData.inspekturKetua);
+                inspekturKetuaInstance.isNewRecord = false;
+                processedData.inspekturKetua = this.decryptUserData(inspekturKetuaInstance).toJSON();
+                console.log('Decrypted inspektur ketua name:', processedData.inspekturKetua.name);
             }
 
             // Decrypt inspektur data if exists
@@ -184,6 +185,15 @@ export class RecommendationService extends BaseService<Recommendation> {
                 inspekturInstance.isNewRecord = false;
                 processedData.inspektur = this.decryptUserData(inspekturInstance).toJSON();
                 console.log('Decrypted inspektur name:', processedData.inspektur.name);
+            }
+
+            // Decrypt kepala data if exists
+            if (processedData.kepala) {
+                console.log('Decrypting kepala data for:', processedData.kepala.id);
+                const kepalaInstance = User.build(processedData.kepala);
+                kepalaInstance.isNewRecord = false;
+                processedData.kepala = this.decryptUserData(kepalaInstance).toJSON();
+                console.log('Decrypted kepala name:', processedData.kepala.name);
             }
 
             // If pemeriksa IDs exist, fetch and decrypt user data
@@ -457,7 +467,7 @@ export class RecommendationService extends BaseService<Recommendation> {
         return await this.recommendationRepository.updateStatus(id, RecommendationStatus.VERIFIKASI_LAPANGAN, {
             tanggal_pemeriksaan: data.tanggal_pemeriksaan,
             pemeriksa: data.pemeriksa,
-            inspektur_kepala_id: data.inspektur_kepala_id,
+            inspektur_ketua_id: data.inspektur_ketua_id,
         });
     }
 
@@ -495,6 +505,7 @@ export class RecommendationService extends BaseService<Recommendation> {
             nomor_rekomendasi: data.nomor_rekomendasi,
             surat_rekomendasi: data.surat_rekomendasi,
             tanggal_surat_rekomendasi: new Date(),
+            kepala_id: data.kepala_id,
         });
     }
 }
