@@ -1,7 +1,7 @@
 import { Sequelize } from 'sequelize-typescript';
 import dotenv from 'dotenv';
 import config from './database.config';
-import { User, Role, Menu, Profile, ProfileApplicant, TempUser, AuditTrail, Settings, Commodity, Recommendation, Certification, CertificationInspection } from '../models';
+import { User, Role, Menu, Profile, ProfileApplicant, TempUser, AuditTrail, Settings, Commodity, Recommendation, Certification, CertificationInspection, SeedSource } from '../models';
 
 dotenv.config();
 
@@ -29,6 +29,6 @@ const sequelize = new Sequelize({
 });
 
 // Add models to the Sequelize instance
-sequelize.addModels([User, Role, Menu, Profile, ProfileApplicant, TempUser, AuditTrail, Settings, Commodity, Recommendation, Certification, CertificationInspection]);
+sequelize.addModels([User, Role, Menu, Profile, ProfileApplicant, TempUser, AuditTrail, Settings, Commodity, Recommendation, Certification, CertificationInspection, SeedSource]);
 
 export default sequelize;

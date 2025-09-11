@@ -10,6 +10,7 @@ import { Commodity } from './Commodity.model';
 import { Recommendation } from './Recommendation.model';
 import { Certification } from './Certification.model';
 import { CertificationInspection } from './CertificationInspection.model';
+import { SeedSource } from './SeedSource.model';
 
 export {
     User,
@@ -23,7 +24,8 @@ export {
     Commodity,
     Recommendation,
     Certification,
-    CertificationInspection
+    CertificationInspection,
+    SeedSource
 };
 
 export default {
@@ -38,5 +40,6 @@ export default {
     Commodity,
     Recommendation,
     Certification,
-    CertificationInspection
+    CertificationInspection,
+    SeedSource
 };

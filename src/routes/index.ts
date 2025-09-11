@@ -14,6 +14,7 @@ import commodityRoutes from './commodity.routes';
 import recommendationRoutes from './recommendation.routes';
 import certificationRoutes from './certification.routes';
 import dashboardRoutes from './dashboard.routes';
+import seedSourceRoutes from './seedSource.routes';
 import { auditLog, loginAudit } from '../middleware/auditLog.middleware';
 
 const router = Router();
@@ -38,6 +39,7 @@ router.use('/settings', auditLog(), settingsRoutes);
 router.use('/commodities', auditLog(), commodityRoutes);
 router.use('/recommendations', auditLog(), recommendationRoutes);
 router.use('/certifications', auditLog(), certificationRoutes);
+router.use('/seed-source', auditLog(), seedSourceRoutes);
 router.use('/dashboard', auditLog(), dashboardRoutes);
 
 export default router;

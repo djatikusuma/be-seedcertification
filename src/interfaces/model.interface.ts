@@ -116,3 +116,14 @@ export interface CertificationInspectionInterface extends BaseEntityInterface {
     file_dokumen_hasil_pemeriksaan?: string;
     pemeriksa_id: string;
 }
+
+export interface SeedSourceInterface extends BaseEntityInterface {
+    pemohon_id: string;
+    nomor_penetapan: string;
+    tanggal_penetapan: Date;
+    file_penetapan_sumber_benih: string;
+    status: number;
+    verifikator_id?: string;
+    catatan_verifikasi?: string;
+    verify_at?: Date;
+}
