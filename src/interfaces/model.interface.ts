@@ -82,14 +82,50 @@ export interface ProfileApplicantInterface extends BaseEntityInterface {
     statusKepemilikan?: string;
 }
 
+export interface RecommendationInterface extends BaseEntityInterface {
+    pemohon_id: string;
+    seedsource_id?: string;
+    verifikator_id?: string;
+    inspektur_ketua_id?: string;
+    inspektur_id?: string;
+    kepala_id?: string;
+    nomor_rekomendasi?: string;
+    surat_rekomendasi?: string;
+    tanggal_surat_rekomendasi?: Date;
+    pemodalan?: number;
+    pemeriksa?: string[];
+    tenaga_kerja_sd?: number;
+    tenaga_kerja_smp?: number;
+    tenaga_kerja_sma?: number;
+    tenaga_kerja_s1_tani?: number;
+    tenaga_kerja_s1_nontani?: number;
+    tanggal_verifikasi_dokumen?: Date;
+    tanggal_verifikasi_penjadwalan?: Date;
+    tanggal_verifikasi_lapangan?: Date;
+    tanggal_verifikasi_penerbitan?: Date;
+    tanggal_pemeriksaan?: Date;
+    is_sertifikasi: boolean;
+    status: number;
+}
+
+export interface CommodityInterface extends BaseEntityInterface {
+    code: string;
+    nama: string;
+    nama_latin?: string;
+    smsb: number;
+    smb: number;
+    is_active: boolean;
+}
+
 export interface CertificationInterface extends BaseEntityInterface {
+    id: string;
+    pemohon_id: string;
+    rekomendasi_id: string;
+    komoditas_id: string;
     nomor_registrasi: string;
     nomor_surat_sertifikat?: string;
     tanggal_surat_sertifikat?: Date;
     tanggal_expired_sertifikat?: Date;
-    pemohon_id: string;
-    rekomendasi_id: string;
-    komoditas_id: string;
     tipe: 'siaptanam' | 'pratanam';
     jumlah_benih: number;
     satuan: string;
@@ -104,6 +140,19 @@ export interface CertificationInterface extends BaseEntityInterface {
     file_surat_sertifikat?: string;
     file_asal_benih?: string;
     file_dokumen_pendukung?: string;
+    verifikator_id?: string;
+    inspektur_ketua_id?: string;
+    inspektur_id?: string;
+    kepala_id?: string;
+    created_by?: string;
+    updated_by?: string;
+    profile_applicant?: ProfileApplicantInterface;
+    recommendation?: RecommendationInterface;
+    commodity?: CommodityInterface;
+    verifikator?: UserInterface;
+    inspektur_ketua?: UserInterface;
+    inspektur?: UserInterface;
+    kepala?: UserInterface;
 }
 
 export interface CertificationInspectionInterface extends BaseEntityInterface {

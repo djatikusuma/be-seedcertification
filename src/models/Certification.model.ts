@@ -16,6 +16,7 @@ import { CertificationInterface } from '../interfaces/model.interface';
 import { ProfileApplicant } from './ProfileApplicant.model';
 import { Recommendation } from './Recommendation.model';
 import { Commodity } from './Commodity.model';
+import { User } from './User.model';
 
 @Table({
     tableName: 'certifications',
@@ -117,6 +118,26 @@ export class Certification extends Model<CertificationInterface> implements Cert
     @Column(DataType.STRING(255))
     file_dokumen_pendukung?: string;
 
+    @ForeignKey(() => User)
+    @AllowNull(true)
+    @Column(DataType.UUID)
+    verifikator_id?: string;
+
+    @ForeignKey(() => User)
+    @AllowNull(true)
+    @Column(DataType.UUID)
+    inspektur_ketua_id?: string;
+
+    @ForeignKey(() => User)
+    @AllowNull(true)
+    @Column(DataType.UUID)
+    inspektur_id?: string;
+
+    @ForeignKey(() => User)
+    @AllowNull(true)
+    @Column(DataType.UUID)
+    kepala_id?: string;
+
     @CreatedAt
     @Column(DataType.DATE)
     declare createdAt: Date;
@@ -138,6 +159,18 @@ export class Certification extends Model<CertificationInterface> implements Cert
 
     @BelongsTo(() => Commodity)
     komoditas!: Commodity;
+
+    @BelongsTo(() => User, 'verifikator_id')
+    verifikator?: User;
+
+    @BelongsTo(() => User, 'inspektur_ketua_id')
+    inspektur_ketua?: User;
+
+    @BelongsTo(() => User, 'inspektur_id')
+    inspektur?: User;
+
+    @BelongsTo(() => User, 'kepala_id')
+    kepala?: User;
 
     /**
      * Generate registration number based on type

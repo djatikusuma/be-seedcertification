@@ -70,6 +70,61 @@ export class CertificationService extends BaseService<Certification> {
     }
 
     /**
+     * Automatically populate user relation fields based on user role
+     */
+    private async autoPopulateUserFields(updateData: any, userId: string, userRole: string): Promise<void> {
+        // Only populate if field is not already set
+        switch (userRole) {
+            case 'verifikatur':
+                if (!updateData.verifikator_id) {
+                    updateData.verifikator_id = userId;
+                }
+                break;
+            case 'inspektur_ketua':
+                if (!updateData.inspektur_ketua_id) {
+                    updateData.inspektur_ketua_id = userId;
+                }
+                break;
+            case 'inspektur':
+                if (!updateData.inspektur_id) {
+                    updateData.inspektur_id = userId;
+                }
+                break;
+            case 'kepala':
+                if (!updateData.kepala_id) {
+                    updateData.kepala_id = userId;
+                }
+                break;
+        }
+    }
+
+    /**
+     * Apply data decryption to certification data
+     */
+    private applyCertificationDecryption(certification: any): any {
+        if (!certification) return certification;
+
+        const certificationData = certification.toJSON ? certification.toJSON() : certification;
+
+        // Decrypt ProfileApplicant data if present
+        if (certificationData.pemohon) {
+            // Fields to decrypt for ProfileApplicant
+            const fieldsToDecrypt = ['nik', 'email', 'namaPemohon', 'telepon', 'alamatPemohon'];
+            certificationData.pemohon = CryptoUtil.decryptFields(certificationData.pemohon, fieldsToDecrypt);
+        }
+
+        // Decrypt related user data
+        ['verifikator', 'inspektur_ketua', 'inspektur', 'kepala'].forEach(role => {
+            if (certificationData[role]) {
+                const userFieldsToDecrypt = ['name', 'email'];
+                certificationData[role] = CryptoUtil.decryptFields(certificationData[role], userFieldsToDecrypt);
+            }
+        });
+
+        return certificationData;
+    }
+
+    /**
      * Create new certification
      */
     async createCertification(data: CreateCertificationData, pemohonId: string): Promise<Certification> {
@@ -77,7 +132,7 @@ export class CertificationService extends BaseService<Certification> {
         const sequence = await this.certificationRepository.generateSequenceNumber(data.tipe);
         const nomorRegistrasi = Certification.generateRegistrationNumber(data.tipe, sequence);
 
-        const certificationData: Partial<CertificationInterface> = {
+        const certificationData: Partial<Certification> = {
             nomor_registrasi: nomorRegistrasi,
             pemohon_id: pemohonId,
             rekomendasi_id: data.rekomendasi_id,
@@ -226,83 +281,14 @@ export class CertificationService extends BaseService<Certification> {
      * Get certification detail by ID
      */
     async getCertificationById(id: string): Promise<any> {
-        const certification = await this.certificationRepository.findByIdWithRelations(id);
+        const certification = await this.certificationRepository.findByIdWithDetails(id);
 
         if (!certification) {
             throw new Error('Sertifikasi tidak ditemukan');
         }
 
-        const certificationData: any = certification.toJSON();
-
-        // Decrypt pemohon data
-        if (certificationData.pemohon) {
-            certificationData.pemohon = this.decryptProfileData(certificationData.pemohon);
-        }
-
-        // Decrypt pemeriksa data - check both inspectors virtual property and pemeriksa array
-        const certificationWithInspectors = certification as any;
-        if (certificationWithInspectors.inspectors && certificationWithInspectors.inspectors.length > 0) {
-            // Use inspectors from repository virtual property
-            certificationData.pemeriksa_detail = certificationWithInspectors.inspectors.map((user: any) => {
-                const userData = user.toJSON();
-
-                // Decrypt user data if it has encrypted fields
-                if (userData.name && typeof userData.name === 'string') {
-                    try {
-                        userData.name = CryptoUtil.decrypt(userData.name);
-                    } catch (error) {
-                        console.warn('Failed to decrypt user name:', error);
-                    }
-                }
-
-                if (userData.email && typeof userData.email === 'string') {
-                    try {
-                        userData.email = CryptoUtil.decrypt(userData.email);
-                    } catch (error) {
-                        console.warn('Failed to decrypt user email:', error);
-                    }
-                }
-
-                // Decrypt profile data if exists
-                if (userData.profile) {
-                    userData.profile = this.decryptProfileData(userData.profile);
-                }
-
-                return userData;
-            });
-        } else if (certificationData.pemeriksa && Array.isArray(certificationData.pemeriksa) && certificationData.pemeriksa.length > 0) {
-            // Fallback: fetch pemeriksa details manually
-            const pemeriksaUsers = await this.userRepository.findByIds(certificationData.pemeriksa);
-            certificationData.pemeriksa_detail = pemeriksaUsers.map((user: any) => {
-                const userData = user.toJSON();
-
-                // Decrypt user data if it has encrypted fields
-                if (userData.name && typeof userData.name === 'string') {
-                    try {
-                        userData.name = CryptoUtil.decrypt(userData.name);
-                    } catch (error) {
-                        console.warn('Failed to decrypt user name:', error);
-                    }
-                }
-
-                if (userData.email && typeof userData.email === 'string') {
-                    try {
-                        userData.email = CryptoUtil.decrypt(userData.email);
-                    } catch (error) {
-                        console.warn('Failed to decrypt user email:', error);
-                    }
-                }
-
-                // Decrypt profile data if exists
-                if (userData.profile) {
-                    userData.profile = this.decryptProfileData(userData.profile);
-                }
-
-                return userData;
-            });
-        } else {
-            certificationData.pemeriksa_detail = [];
-        }
+        // Apply decryption to all data
+        const certificationData = this.applyCertificationDecryption(certification);
 
         // Add status label
         certificationData.status_label = this.getStatusLabel(certificationData.status);
@@ -316,7 +302,9 @@ export class CertificationService extends BaseService<Certification> {
     async verifyCertification(
         id: string,
         catatanAdministrasi: string | null,
-        approved: boolean
+        approved: boolean,
+        userId?: string,
+        userRole?: string
     ): Promise<Certification | null> {
         const certification = await this.certificationRepository.findById(id);
         if (!certification) {
@@ -328,9 +316,14 @@ export class CertificationService extends BaseService<Certification> {
         }
 
         const newStatus = approved ? 2 : 7; // 2: Penjadwalan, 7: Ditolak
-        const updateData: Partial<CertificationInterface> = {
+        const updateData: Partial<Certification> = {
             catatan_administrasi: catatanAdministrasi || undefined,
         };
+
+        // Auto-populate user relation fields
+        if (userId && userRole) {
+            await this.autoPopulateUserFields(updateData, userId, userRole);
+        }
 
         const updatedCertification = await this.certificationRepository.updateStatus(id, newStatus, updateData);
 
@@ -344,12 +337,14 @@ export class CertificationService extends BaseService<Certification> {
     }
 
     /**
-     * Schedule certification (by inspektur_kepala)
+     * Schedule certification (by inspektur_ketua)
      */
     async scheduleCertification(
         id: string,
         tanggalJadwalPemeriksaan: Date,
-        pemeriksa: string[]
+        pemeriksa: string[],
+        userId?: string,
+        userRole?: string
     ): Promise<Certification | null> {
         const certification = await this.certificationRepository.findById(id);
         if (!certification) {
@@ -372,10 +367,17 @@ export class CertificationService extends BaseService<Certification> {
             }
         }
 
-        const updatedCertification = await this.certificationRepository.updateStatus(id, 3, {
+        const updateData: any = {
             tanggal_jadwal_pemeriksaan: tanggalJadwalPemeriksaan,
             pemeriksa: pemeriksa,
-        }); // Status 3: Verifikasi Lapangan
+        };
+
+        // Auto-populate user relation fields
+        if (userId && userRole) {
+            await this.autoPopulateUserFields(updateData, userId, userRole);
+        }
+
+        const updatedCertification = await this.certificationRepository.updateStatus(id, 3, updateData); // Status 3: Verifikasi Lapangan
 
         if (updatedCertification) {
             const certificationWithLabel: any = updatedCertification.toJSON();
@@ -393,7 +395,9 @@ export class CertificationService extends BaseService<Certification> {
         id: string,
         inspectionData: InspectionData,
         catatanPemeriksaan: string | null,
-        approved: boolean
+        approved: boolean,
+        userId?: string,
+        userRole?: string
     ): Promise<Certification | null> {
         const certification = await this.certificationRepository.findById(id);
         if (!certification) {
@@ -424,9 +428,14 @@ export class CertificationService extends BaseService<Certification> {
         await this.certificationInspectionRepository.create(inspectionRecord);
 
         const newStatus = approved ? 4 : 7; // 4: Pengesahan, 7: Ditolak
-        const updateData: Partial<CertificationInterface> = {
+        const updateData: Partial<Certification> = {
             catatan_pemeriksaan: catatanPemeriksaan || undefined,
         };
+
+        // Auto-populate user relation fields
+        if (userId && userRole) {
+            await this.autoPopulateUserFields(updateData, userId, userRole);
+        }
 
         const updatedCertification = await this.certificationRepository.updateStatus(id, newStatus, updateData);
 
@@ -475,12 +484,14 @@ export class CertificationService extends BaseService<Certification> {
             return inspectionData;
         });
     }    /**
-     * Validate certification (by inspektur_kepala)
+     * Validate certification (by inspektur_ketua)
      */
     async validateCertification(
         id: string,
         catatanValidasi: string | null,
-        approved: boolean
+        approved: boolean,
+        userId?: string,
+        userRole?: string
     ): Promise<Certification | null> {
         const certification = await this.certificationRepository.findById(id);
         if (!certification) {
@@ -492,9 +503,14 @@ export class CertificationService extends BaseService<Certification> {
         }
 
         const newStatus = approved ? 5 : 7; // 5: Penerbitan, 7: Ditolak
-        const updateData: Partial<CertificationInterface> = {
+        const updateData: Partial<Certification> = {
             catatan_validasi: catatanValidasi || undefined,
         };
+
+        // Auto-populate user relation fields
+        if (userId && userRole) {
+            await this.autoPopulateUserFields(updateData, userId, userRole);
+        }
 
         const updatedCertification = await this.certificationRepository.updateStatus(id, newStatus, updateData);
 
@@ -515,7 +531,9 @@ export class CertificationService extends BaseService<Certification> {
         nomorSuratSertifikat: string,
         tanggalSertifikat: Date,
         tanggalExpiredSertifikat: Date,
-        fileSuratSertifikat?: string
+        fileSuratSertifikat?: string,
+        userId?: string,
+        userRole?: string
     ): Promise<Certification | null> {
         const certification = await this.certificationRepository.findById(id);
         if (!certification) {
@@ -526,12 +544,19 @@ export class CertificationService extends BaseService<Certification> {
             throw new Error('Sertifikasi tidak dalam status penerbitan surat rekomendasi');
         }
 
-        const updatedCertification = await this.certificationRepository.updateStatus(id, 6, {
+        const updateData: any = {
             nomor_surat_sertifikat: nomorSuratSertifikat,
             tanggal_surat_sertifikat: tanggalSertifikat,
             tanggal_expired_sertifikat: tanggalExpiredSertifikat,
             file_surat_sertifikat: fileSuratSertifikat,
-        }); // Status 6: Selesai
+        };
+
+        // Auto-populate user relation fields
+        if (userId && userRole) {
+            await this.autoPopulateUserFields(updateData, userId, userRole);
+        }
+
+        const updatedCertification = await this.certificationRepository.updateStatus(id, 6, updateData); // Status 6: Selesai
 
         if (updatedCertification) {
             const certificationWithLabel: any = updatedCertification.toJSON();

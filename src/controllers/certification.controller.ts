@@ -231,7 +231,9 @@ export class CertificationController {
             const certification = await this.certificationService.verifyCertification(
                 id,
                 catatan_administrasi || null,
-                approved
+                approved,
+                req.user?.id,
+                userRole
             );
 
             res.status(200).json({
@@ -280,7 +282,9 @@ export class CertificationController {
             const certification = await this.certificationService.scheduleCertification(
                 id,
                 new Date(tanggal_jadwal_pemeriksaan),
-                pemeriksaArray
+                pemeriksaArray,
+                req.user?.id,
+                userRole
             );
 
             res.status(200).json({
@@ -360,7 +364,9 @@ export class CertificationController {
                     id,
                     inspectionData,
                     catatan_pemeriksaan || null,
-                    approved
+                    approved,
+                    userId,
+                    userRole
                 );
 
                 res.status(200).json({
@@ -412,7 +418,7 @@ export class CertificationController {
             const { catatan_validasi, status } = req.body;
             const userRole = req.user?.role;
 
-            // Only inspektur_kepala can validate
+            // Only inspektur_ketua can validate
             if (userRole !== 'inspektur_ketua') {
                 res.status(403).json({
                     success: false,
@@ -425,7 +431,9 @@ export class CertificationController {
             const certification = await this.certificationService.validateCertification(
                 id,
                 catatan_validasi || null,
-                approved
+                approved,
+                req.user?.id,
+                userRole
             );
 
             res.status(200).json({
@@ -485,7 +493,9 @@ export class CertificationController {
                     nomor_surat_sertifikat,
                     new Date(tanggal_sertifikat),
                     new Date(tanggal_expired_sertifikat),
-                    req.file?.filename
+                    req.file?.filename,
+                    req.user?.id,
+                    userRole
                 );
 
                 res.status(200).json({

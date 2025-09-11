@@ -82,6 +82,50 @@ export class CertificationRepository extends BaseRepository<Certification> {
                     model: Commodity,
                     as: 'komoditas',
                     required: true,
+                },
+                {
+                    model: User,
+                    as: 'verifikator',
+                    required: false,
+                    include: [
+                        {
+                            model: Role,
+                            as: 'role',
+                        },
+                    ],
+                },
+                {
+                    model: User,
+                    as: 'inspektur_ketua',
+                    required: false,
+                    include: [
+                        {
+                            model: Role,
+                            as: 'role',
+                        },
+                    ],
+                },
+                {
+                    model: User,
+                    as: 'inspektur',
+                    required: false,
+                    include: [
+                        {
+                            model: Role,
+                            as: 'role',
+                        },
+                    ],
+                },
+                {
+                    model: User,
+                    as: 'kepala',
+                    required: false,
+                    include: [
+                        {
+                            model: Role,
+                            as: 'role',
+                        },
+                    ],
                 }
             );
         }
@@ -139,6 +183,50 @@ export class CertificationRepository extends BaseRepository<Certification> {
                     model: Commodity,
                     as: 'komoditas',
                     required: true,
+                },
+                {
+                    model: User,
+                    as: 'verifikator',
+                    required: false,
+                    include: [
+                        {
+                            model: Role,
+                            as: 'role',
+                        },
+                    ],
+                },
+                {
+                    model: User,
+                    as: 'inspektur_ketua',
+                    required: false,
+                    include: [
+                        {
+                            model: Role,
+                            as: 'role',
+                        },
+                    ],
+                },
+                {
+                    model: User,
+                    as: 'inspektur',
+                    required: false,
+                    include: [
+                        {
+                            model: Role,
+                            as: 'role',
+                        },
+                    ],
+                },
+                {
+                    model: User,
+                    as: 'kepala',
+                    required: false,
+                    include: [
+                        {
+                            model: Role,
+                            as: 'role',
+                        },
+                    ],
                 },
             ],
         });
@@ -210,8 +298,8 @@ export class CertificationRepository extends BaseRepository<Certification> {
         });
     }
 
-    async updateStatus(id: string, status: number, additionalData?: Partial<CertificationInterface>): Promise<Certification | null> {
-        const updateData: Partial<CertificationInterface> = {
+    async updateStatus(id: string, status: number, additionalData?: Partial<Certification>): Promise<Certification | null> {
+        const updateData: Partial<Certification> = {
             status: status,
             ...additionalData,
         };
