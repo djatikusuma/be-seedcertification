@@ -1,9 +1,15 @@
 import { Table, Column, Model, DataType, Index, BelongsTo, ForeignKey } from 'sequelize-typescript';
 import { BaseEntityInterface } from '../interfaces/model.interface';
 import { ProfileApplicant } from './ProfileApplicant.model';
+import { SeedSource } from './SeedSource.model';
+import { User } from './User.model';
 
 export interface RecommendationInterface extends BaseEntityInterface {
     pemohon_id: string;
+    seedsource_id?: string;
+    verifikator_id?: string;
+    inspektur_kepala_id?: string;
+    inspektur_id?: string;
     nomor_rekomendasi?: string;
     surat_rekomendasi?: string;
     tanggal_surat_rekomendasi?: Date;
@@ -64,6 +70,50 @@ export class Recommendation extends Model<RecommendationInterface> implements Re
 
     @BelongsTo(() => ProfileApplicant)
     pemohon!: ProfileApplicant;
+
+    @Index
+    @ForeignKey(() => SeedSource)
+    @Column({
+        type: DataType.UUID,
+        allowNull: true,
+    })
+    seedsource_id?: string;
+
+    @BelongsTo(() => SeedSource, 'seedsource_id')
+    seedSource!: SeedSource;
+
+    @Index
+    @ForeignKey(() => User)
+    @Column({
+        type: DataType.UUID,
+        allowNull: true,
+    })
+    verifikator_id?: string;
+
+    @BelongsTo(() => User, 'verifikator_id')
+    verifikator!: User;
+
+    @Index
+    @ForeignKey(() => User)
+    @Column({
+        type: DataType.UUID,
+        allowNull: true,
+    })
+    inspektur_kepala_id?: string;
+
+    @BelongsTo(() => User, 'inspektur_kepala_id')
+    inspekturKepala!: User;
+
+    @Index
+    @ForeignKey(() => User)
+    @Column({
+        type: DataType.UUID,
+        allowNull: true,
+    })
+    inspektur_id?: string;
+
+    @BelongsTo(() => User, 'inspektur_id')
+    inspektur!: User;
 
     @Index
     @Column({

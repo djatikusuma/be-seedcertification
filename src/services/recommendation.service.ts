@@ -8,6 +8,7 @@ import { CryptoUtil } from '../utils/crypto.util';
 
 export interface CreateRecommendationDto {
     pemohon_id: string;
+    seedsource_id?: string;
     pemodalan?: number;
     tenaga_kerja_sd?: number;
     tenaga_kerja_smp?: number;
@@ -21,16 +22,19 @@ export interface CreateRecommendationDto {
 export interface VerificationDto {
     catatan_verifikasi?: string;
     status: 'approve' | 'reject';
+    verifikator_id?: string;
 }
 
 export interface SchedulingDto {
     tanggal_pemeriksaan: Date;
     pemeriksa: string[];
+    inspektur_kepala_id?: string;
 }
 
 export interface InspectionDto {
     catatan_pemeriksaan?: string;
     status: 'approve' | 'reject';
+    inspektur_id?: string;
 }
 
 export interface PublishDto {
@@ -155,6 +159,33 @@ export class RecommendationService extends BaseService<Recommendation> {
                 console.log('Decrypted pemohon name:', processedData.pemohon.namaPemohon);
             }
 
+            // Decrypt verifikator data if exists
+            if (processedData.verifikator) {
+                console.log('Decrypting verifikator data for:', processedData.verifikator.id);
+                const verifikatorInstance = User.build(processedData.verifikator);
+                verifikatorInstance.isNewRecord = false;
+                processedData.verifikator = this.decryptUserData(verifikatorInstance).toJSON();
+                console.log('Decrypted verifikator name:', processedData.verifikator.name);
+            }
+
+            // Decrypt inspektur kepala data if exists
+            if (processedData.inspekturKepala) {
+                console.log('Decrypting inspektur kepala data for:', processedData.inspekturKepala.id);
+                const inspekturKepalaInstance = User.build(processedData.inspekturKepala);
+                inspekturKepalaInstance.isNewRecord = false;
+                processedData.inspekturKepala = this.decryptUserData(inspekturKepalaInstance).toJSON();
+                console.log('Decrypted inspektur kepala name:', processedData.inspekturKepala.name);
+            }
+
+            // Decrypt inspektur data if exists
+            if (processedData.inspektur) {
+                console.log('Decrypting inspektur data for:', processedData.inspektur.id);
+                const inspekturInstance = User.build(processedData.inspektur);
+                inspekturInstance.isNewRecord = false;
+                processedData.inspektur = this.decryptUserData(inspekturInstance).toJSON();
+                console.log('Decrypted inspektur name:', processedData.inspektur.name);
+            }
+
             // If pemeriksa IDs exist, fetch and decrypt user data
             if (processedData.pemeriksa && Array.isArray(processedData.pemeriksa) && processedData.pemeriksa.length > 0) {
                 console.log('Fetching pemeriksa data for IDs:', processedData.pemeriksa);
@@ -214,6 +245,7 @@ export class RecommendationService extends BaseService<Recommendation> {
 
         return await this.recommendationRepository.create({
             pemohon_id: data.pemohon_id,
+            seedsource_id: data.seedsource_id,
             pemodalan: data.pemodalan,
             tenaga_kerja_sd: data.tenaga_kerja_sd || 0,
             tenaga_kerja_smp: data.tenaga_kerja_smp || 0,
@@ -389,9 +421,16 @@ export class RecommendationService extends BaseService<Recommendation> {
             ? RecommendationStatus.PENJADWALAN_PEMERIKSAAN
             : RecommendationStatus.DITOLAK;
 
-        return await this.recommendationRepository.updateStatus(id, newStatus, {
+        const updateData: any = {
             catatan_verifikasi: data.catatan_verifikasi,
-        });
+        };
+
+        // Add verifikator_id if provided
+        if (data.verifikator_id) {
+            updateData.verifikator_id = data.verifikator_id;
+        }
+
+        return await this.recommendationRepository.updateStatus(id, newStatus, updateData);
     }
 
     async scheduleRecommendation(id: string, data: SchedulingDto): Promise<Recommendation | null> {
@@ -418,6 +457,7 @@ export class RecommendationService extends BaseService<Recommendation> {
         return await this.recommendationRepository.updateStatus(id, RecommendationStatus.VERIFIKASI_LAPANGAN, {
             tanggal_pemeriksaan: data.tanggal_pemeriksaan,
             pemeriksa: data.pemeriksa,
+            inspektur_kepala_id: data.inspektur_kepala_id,
         });
     }
 
@@ -437,6 +477,7 @@ export class RecommendationService extends BaseService<Recommendation> {
 
         return await this.recommendationRepository.updateStatus(id, newStatus, {
             catatan_pemeriksaan: data.catatan_pemeriksaan,
+            inspektur_id: data.inspektur_id,
         });
     }
 

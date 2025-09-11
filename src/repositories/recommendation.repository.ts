@@ -3,6 +3,7 @@ import { Recommendation, RecommendationInterface } from '../models/Recommendatio
 import { ProfileApplicant } from '../models/ProfileApplicant.model';
 import { User } from '../models/User.model';
 import { Role } from '../models/Role.model';
+import { SeedSource } from '../models/SeedSource.model';
 import { Op, WhereOptions, Includeable, Sequelize } from 'sequelize';
 
 export interface RecommendationFilterOptions {
@@ -95,6 +96,50 @@ export class RecommendationRepository extends BaseRepository<Recommendation> {
                     model: ProfileApplicant,
                     as: 'pemohon',
                     required: true,
+                },
+                {
+                    model: SeedSource,
+                    as: 'seedSource',
+                    required: false,
+                },
+                {
+                    model: User,
+                    as: 'verifikator',
+                    required: false,
+                    attributes: ['id', 'name', 'email'],
+                    include: [
+                        {
+                            model: Role,
+                            as: 'role',
+                            attributes: ['id', 'roleName'],
+                        },
+                    ],
+                },
+                {
+                    model: User,
+                    as: 'inspekturKepala',
+                    required: false,
+                    attributes: ['id', 'name', 'email'],
+                    include: [
+                        {
+                            model: Role,
+                            as: 'role',
+                            attributes: ['id', 'roleName'],
+                        },
+                    ],
+                },
+                {
+                    model: User,
+                    as: 'inspektur',
+                    required: false,
+                    attributes: ['id', 'name', 'email'],
+                    include: [
+                        {
+                            model: Role,
+                            as: 'role',
+                            attributes: ['id', 'roleName'],
+                        },
+                    ],
                 },
             ],
         });

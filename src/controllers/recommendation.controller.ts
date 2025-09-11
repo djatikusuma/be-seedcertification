@@ -26,6 +26,22 @@ interface MulterRequest extends Request {
  *         pemohon_id:
  *           type: string
  *           format: uuid
+ *         seedsource_id:
+ *           type: string
+ *           format: uuid
+ *           description: ID from seed sources table
+ *         verifikator_id:
+ *           type: string
+ *           format: uuid
+ *           description: ID of user who performed verification
+ *         inspektur_kepala_id:
+ *           type: string
+ *           format: uuid
+ *           description: ID of head inspector user for scheduling
+ *         inspektur_id:
+ *           type: string
+ *           format: uuid
+ *           description: ID of inspector user who performed inspection
  *         nomor_rekomendasi:
  *           type: string
  *         surat_rekomendasi:
@@ -109,6 +125,10 @@ interface MulterRequest extends Request {
  *     CreateRecommendationRequest:
  *       type: object
  *       properties:
+ *         seedsource_id:
+ *           type: string
+ *           format: uuid
+ *           description: ID from seed sources table (optional)
  *         pemodalan:
  *           type: number
  *           format: decimal
@@ -323,6 +343,10 @@ export class RecommendationController {
      *           schema:
      *             type: object
      *             properties:
+     *               seedsource_id:
+     *                 type: string
+     *                 format: uuid
+     *                 description: ID from seed sources table (optional)
      *               pemodalan:
      *                 type: number
      *                 format: decimal
@@ -471,7 +495,10 @@ export class RecommendationController {
                 return;
             }
 
-            const verificationData: VerificationDto = req.body;
+            const verificationData: VerificationDto = {
+                ...req.body,
+                verifikator_id: user.id
+            };
 
             if (!['approve', 'reject'].includes(verificationData.status)) {
                 res.status(400).json({
@@ -542,7 +569,10 @@ export class RecommendationController {
                 return;
             }
 
-            const schedulingData: SchedulingDto = req.body;
+            const schedulingData: SchedulingDto = {
+                ...req.body,
+                inspektur_kepala_id: user.id
+            };
 
             if (!schedulingData.tanggal_pemeriksaan || !schedulingData.pemeriksa || !Array.isArray(schedulingData.pemeriksa)) {
                 res.status(400).json({
@@ -615,7 +645,10 @@ export class RecommendationController {
                 return;
             }
 
-            const inspectionData: InspectionDto = req.body;
+            const inspectionData: InspectionDto = {
+                ...req.body,
+                inspektur_id: user.id
+            };
 
             if (!['approve', 'reject'].includes(inspectionData.status)) {
                 res.status(400).json({
