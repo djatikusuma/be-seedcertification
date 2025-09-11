@@ -89,6 +89,12 @@ export class UserController {
     *           type: string
     *           enum: [admin, user, petani, perusahaan, inspektur, inspektur_ketua, verifikatur, kepala]
     *         description: Filter users by role name. Use GET /api/roles to see all available roles.
+    *       - in: query
+    *         name: status
+    *         schema:
+    *           type: string
+    *           enum: [active, not_active, revoked]
+    *         description: Filter users by status (active, not_active, revoked)
     *     responses:
     *       200:
     *         description: Users data retrieved successfully
@@ -148,6 +154,7 @@ export class UserController {
 
             // Parse filter parameters
             const roleFilter = req.query.role as string || null;
+            const statusFilter = req.query.status as string || null;
 
             // Validate pagination parameters
             if (page < 1) {
@@ -164,8 +171,16 @@ export class UserController {
                 });
             }
 
+            // Validate status filter if provided
+            if (statusFilter && !['active', 'not_active', 'revoked'].includes(statusFilter)) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Invalid status filter. Must be one of: active, not_active, revoked'
+                });
+            }
+
             // Use service method with pagination, filtering and masking
-            const result = await this.userService.findAllWithMasking(requestingUserRole, page, limit, roleFilter);
+            const result = await this.userService.findAllWithMasking(requestingUserRole, page, limit, roleFilter, statusFilter);
 
             res.status(200).json({
                 status: 'success',
@@ -176,6 +191,7 @@ export class UserController {
                     currentPage: result.currentPage,
                     limit: limit,
                     roleFilter: roleFilter,
+                    statusFilter: statusFilter,
                     masking_applied: true,
                     masking_level: requestingUserRole
                 }
@@ -694,6 +710,131 @@ export class UserController {
             res.status(200).json({ status: 'success', message: 'User deleted successfully' });
         } catch (error) {
             res.status(500).json({ status: 'error', message: 'Failed to delete user' });
+        }
+    };
+
+    /**
+     * @swagger
+     * /api/users/{id}/status:
+     *   patch:
+     *     summary: Update user status
+     *     description: Update the status of a user. Only accessible by admin and kepala roles.
+     *     tags: [Users]
+     *     security:
+     *       - bearerAuth: []
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         required: true
+     *         schema:
+     *           type: string
+     *           format: uuid
+     *         description: User ID
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *             required:
+     *               - status
+     *             properties:
+     *               status:
+     *                 type: string
+     *                 enum: [active, not_active, revoked]
+     *                 description: New status for the user
+     *                 example: active
+     *               reason:
+     *                 type: string
+     *                 description: Optional reason for status change
+     *                 example: Account suspended for policy violation
+     *     responses:
+     *       200:
+     *         description: User status updated successfully
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *               properties:
+     *                 status:
+     *                   type: string
+     *                   example: success
+     *                 message:
+     *                   type: string
+     *                   example: User status updated successfully
+     *                 data:
+     *                   type: object
+     *                   properties:
+     *                     id:
+     *                       type: string
+     *                       format: uuid
+     *                     status:
+     *                       type: string
+     *                       enum: [active, not_active, revoked]
+     *                     updatedAt:
+     *                       type: string
+     *                       format: date-time
+     *       400:
+     *         description: Bad request - Invalid status value or missing required fields
+     *       401:
+     *         description: Unauthorized - User not authenticated
+     *       403:
+     *         description: Forbidden - User does not have admin or kepala role
+     *       404:
+     *         description: User not found
+     *       500:
+     *         description: Server error
+     */
+    updateUserStatus = async (req: Request, res: Response) => {
+        try {
+            const { id } = req.params;
+            const { status, reason } = req.body;
+
+            // Validate required fields
+            if (!status) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Status is required'
+                });
+            }
+
+            // Validate status value
+            const validStatuses = ['active', 'not_active', 'revoked'];
+            if (!validStatuses.includes(status)) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: `Invalid status. Must be one of: ${validStatuses.join(', ')}`
+                });
+            }
+
+            // Check if user exists
+            const existingUser = await this.userService.findById(id);
+            if (!existingUser) {
+                return res.status(404).json({
+                    status: 'error',
+                    message: 'User not found'
+                });
+            }
+
+            // Update user status
+            const updatedUser = await this.userService.updateUserStatus(id, status, reason);
+
+            res.status(200).json({
+                status: 'success',
+                message: 'User status updated successfully',
+                data: {
+                    id: updatedUser.id,
+                    status: updatedUser.status,
+                    updatedAt: updatedUser.updatedAt
+                }
+            });
+        } catch (error) {
+            console.error('Error updating user status:', error);
+            res.status(500).json({
+                status: 'error',
+                message: 'Failed to update user status',
+                error: error instanceof Error ? error.message : 'Unknown error'
+            });
         }
     };
 }

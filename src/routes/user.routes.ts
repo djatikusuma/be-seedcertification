@@ -17,6 +17,7 @@ router.get('/', userController.getAllUsers);
 router.get('/search', userController.searchUsers); // Must be before /:id route
 router.get('/:id', userController.getUserById);
 router.post('/', userController.createUser);
+router.patch('/:id/status', rbacMiddleware(['admin', 'kepala']), userController.updateUserStatus); // Only admin and kepala can update status
 router.delete('/:id', userController.deleteUser);
 
 export default router;

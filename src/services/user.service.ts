@@ -23,7 +23,8 @@ export class UserService extends BaseService<UserInterface> {
         requestingUserRole: string = 'guest',
         page: number = 1,
         limit: number = 10,
-        roleFilter?: string | null
+        roleFilter?: string | null,
+        statusFilter?: string | null
     ): Promise<{
         users: Partial<UserInterface>[];
         total: number;
@@ -32,9 +33,14 @@ export class UserService extends BaseService<UserInterface> {
     }> {
         const offset = (page - 1) * limit;
 
-        // Build where clause for role filtering
+        // Build where clause for status filtering
         const whereClause: any = {};
         const includeClause: any = ['role'];
+
+        // Add status filter to where clause if provided
+        if (statusFilter) {
+            whereClause.status = statusFilter;
+        }
 
         // If role filter is provided, add it to include clause with where condition
         if (roleFilter) {
@@ -156,5 +162,27 @@ export class UserService extends BaseService<UserInterface> {
 
         // Return updated user with masking
         return this.findByIdWithMasking(id, requestingUserRole);
+    }
+
+    async updateUserStatus(
+        id: string,
+        status: string,
+        reason?: string
+    ): Promise<User> {
+        // Find the user instance first
+        const userInstance = await User.findByPk(id);
+        if (!userInstance) {
+            throw new Error('User not found');
+        }
+
+        // Update the status
+        await userInstance.update({
+            status: status as any,
+            // Optional: You can add a status_reason field to track reasons
+            // status_reason: reason
+        });
+
+        // Return the updated user instance
+        return userInstance;
     }
 }

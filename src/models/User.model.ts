@@ -4,6 +4,12 @@ import Role from './Role.model';
 import { CryptoUtil } from '../utils/crypto.util';
 import { DataMaskingUtil, MaskingType, MaskingOptions } from '../utils/masking.util';
 
+export enum UserStatus {
+    ACTIVE = 'active',
+    NOT_ACTIVE = 'not_active',
+    REVOKED = 'revoked'
+}
+
 @Table({
     tableName: 'users',
     timestamps: true,
@@ -66,6 +72,14 @@ export class User extends Model<UserInterface> implements UserInterface {
         allowNull: true,
     })
     deletionRequestDate?: Date;
+
+    @Column({
+        type: DataType.ENUM(...Object.values(UserStatus)),
+        allowNull: false,
+        defaultValue: UserStatus.ACTIVE,
+        comment: 'User status: active (normal user), not_active (temporarily disabled), revoked (permanently disabled)'
+    })
+    status!: UserStatus;
 
     // Lazy loading for profile relationships
     @HasOne(() => require('./Profile.model').Profile)

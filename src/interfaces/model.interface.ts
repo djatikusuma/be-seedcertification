@@ -12,6 +12,7 @@ export interface UserInterface extends BaseEntityInterface {
     roleId: string;
     deletionRequested?: boolean;
     deletionRequestDate?: Date;
+    status?: 'active' | 'not_active' | 'revoked';
 }
 
 export interface TempUserInterface extends BaseEntityInterface {
