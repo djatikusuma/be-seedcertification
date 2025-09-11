@@ -52,7 +52,7 @@ export class SeedSourceController {
             const status = req.query.status ? parseInt(req.query.status as string) : undefined;
 
             const user = (req as any).user;
-            const userRole = user?.role?.roleName;
+            const userRole = user?.role;
             let pemohonId: string | undefined;
 
             // If user is pemohon (petani or perusahaan), filter by their pemohon_id
@@ -134,7 +134,7 @@ export class SeedSourceController {
         try {
             const { id } = req.params;
             const user = (req as any).user;
-            const userRole = user?.role?.roleName;
+            const userRole = user?.role;
 
             const seedSource = await this.seedSourceService.getSeedSourceById(id);
 
@@ -390,7 +390,7 @@ export class SeedSourceController {
             const { id } = req.params;
             const { status, catatan_verifikasi } = req.body;
             const user = (req as any).user;
-            const userRole = user?.role?.roleName;
+            const userRole = user?.role;
 
             // Only verifikatur can perform verification
             if (userRole !== 'verifikatur') {

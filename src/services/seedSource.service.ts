@@ -51,34 +51,77 @@ export class SeedSourceService {
         pemohonId?: string,
         status?: number
     ): Promise<{
-        items: SeedSource[];
+        items: any[];
         total: number;
         totalPages: number;
         currentPage: number;
     }> {
         const result = await this.seedSourceRepository.findAllWithDetails(page, limit, pemohonId, status);
 
-        // Decrypt sensitive data for display
-        const decryptedItems = await Promise.all(result.items.map(async (seedSource: any) => {
-            const seedSourceData = seedSource.toJSON();
+        // Properly serialize and decrypt sensitive data for display
+        const decryptedItems = result.items.map((seedSource: any) => {
+            // Convert to plain object safely
+            const seedSourceData: any = {
+                id: seedSource.id,
+                pemohon_id: seedSource.pemohon_id,
+                nomor_penetapan: seedSource.nomor_penetapan,
+                tanggal_penetapan: seedSource.tanggal_penetapan,
+                file_penetapan_sumber_benih: seedSource.file_penetapan_sumber_benih,
+                status: seedSource.status,
+                status_label: seedSource.getStatusLabel(),
+                verifikator_id: seedSource.verifikator_id,
+                catatan_verifikasi: seedSource.catatan_verifikasi,
+                tanggal_verifikasi: seedSource.tanggal_verifikasi,
+                created_at: seedSource.created_at,
+                updated_at: seedSource.updated_at
+            };
 
-            // Decrypt pemohon data
-            if (seedSourceData.pemohon) {
-                seedSourceData.pemohon = this.decryptProfileData(seedSourceData.pemohon);
+            // Add pemohon data if exists
+            if (seedSource.pemohon) {
+                const pemohonData = {
+                    id: seedSource.pemohon.id,
+                    userId: seedSource.pemohon.userId,
+                    nik: seedSource.pemohon.nik,
+                    npwp: seedSource.pemohon.npwp,
+                    email: seedSource.pemohon.email,
+                    namaPemohon: seedSource.pemohon.namaPemohon,
+                    telepon: seedSource.pemohon.telepon,
+                    alamatPemohon: seedSource.pemohon.alamatPemohon,
+                    alamatPerusahaan: seedSource.pemohon.alamatPerusahaan,
+                    nikKuasa: seedSource.pemohon.nikKuasa,
+                    namaKuasa: seedSource.pemohon.namaKuasa
+                };
 
-                // Decrypt user data in pemohon if exists
-                if (seedSourceData.pemohon.user) {
-                    seedSourceData.pemohon.user = this.decryptUserData(seedSourceData.pemohon.user);
+                // Decrypt pemohon data
+                seedSourceData.pemohon = this.decryptProfileData(pemohonData);
+
+                // Add user data if exists
+                if (seedSource.pemohon.user) {
+                    const userData = {
+                        id: seedSource.pemohon.user.id,
+                        name: seedSource.pemohon.user.name,
+                        email: seedSource.pemohon.user.email,
+                        role: seedSource.pemohon.user.role ? {
+                            id: seedSource.pemohon.user.role.id,
+                            roleName: seedSource.pemohon.user.role.roleName
+                        } : null
+                    };
+                    seedSourceData.pemohon.user = this.decryptUserData(userData);
                 }
             }
 
-            // Decrypt verifikator data if exists
-            if (seedSourceData.verifikator) {
-                seedSourceData.verifikator = this.decryptUserData(seedSourceData.verifikator);
+            // Add verifikator data if exists
+            if (seedSource.verifikator) {
+                const verifikatorData = {
+                    id: seedSource.verifikator.id,
+                    name: seedSource.verifikator.name,
+                    email: seedSource.verifikator.email
+                };
+                seedSourceData.verifikator = this.decryptUserData(verifikatorData);
             }
 
             return seedSourceData;
-        }));
+        });
 
         return {
             ...result,
@@ -86,49 +129,110 @@ export class SeedSourceService {
         };
     }
 
-    async getSeedSourceById(id: string): Promise<SeedSource | null> {
+    async getSeedSourceById(id: string): Promise<any | null> {
         const seedSource = await this.seedSourceRepository.findByIdWithDetails(id);
 
         if (!seedSource) {
             return null;
         }
 
-        const seedSourceData = seedSource.toJSON();
+        // Convert to plain object safely
+        const seedSourceData: any = {
+            id: seedSource.id,
+            pemohon_id: seedSource.pemohon_id,
+            nomor_penetapan: seedSource.nomor_penetapan,
+            tanggal_penetapan: seedSource.tanggal_penetapan,
+            file_penetapan_sumber_benih: seedSource.file_penetapan_sumber_benih,
+            status: seedSource.status,
+            status_label: seedSource.getStatusLabel(),
+            verifikator_id: seedSource.verifikator_id,
+            catatan_verifikasi: seedSource.catatan_verifikasi,
+            verify_at: seedSource.verify_at,
+            created_at: seedSource.created_at,
+            updated_at: seedSource.updated_at
+        };
 
-        // Decrypt pemohon data
-        if (seedSourceData.pemohon) {
-            seedSourceData.pemohon = this.decryptProfileData(seedSourceData.pemohon);
+        // Add pemohon data if exists
+        if (seedSource.pemohon) {
+            const pemohonData = {
+                id: seedSource.pemohon.id,
+                userId: seedSource.pemohon.userId,
+                nik: seedSource.pemohon.nik,
+                npwp: seedSource.pemohon.npwp,
+                email: seedSource.pemohon.email,
+                namaPemohon: seedSource.pemohon.namaPemohon,
+                telepon: seedSource.pemohon.telepon,
+                alamatPemohon: seedSource.pemohon.alamatPemohon,
+                alamatPerusahaan: seedSource.pemohon.alamatPerusahaan,
+                nikKuasa: seedSource.pemohon.nikKuasa,
+                namaKuasa: seedSource.pemohon.namaKuasa
+            };
 
-            // Decrypt user data in pemohon if exists
-            if (seedSourceData.pemohon.user) {
-                seedSourceData.pemohon.user = this.decryptUserData(seedSourceData.pemohon.user);
+            // Decrypt pemohon data
+            seedSourceData.pemohon = this.decryptProfileData(pemohonData);
+
+            // Add user data if exists
+            if (seedSource.pemohon.user) {
+                const userData = {
+                    id: seedSource.pemohon.user.id,
+                    name: seedSource.pemohon.user.name,
+                    email: seedSource.pemohon.user.email,
+                    role: seedSource.pemohon.user.role ? {
+                        id: seedSource.pemohon.user.role.id,
+                        roleName: seedSource.pemohon.user.role.roleName
+                    } : null
+                };
+                seedSourceData.pemohon.user = this.decryptUserData(userData);
             }
         }
 
-        // Decrypt verifikator data if exists
-        if (seedSourceData.verifikator) {
-            seedSourceData.verifikator = this.decryptUserData(seedSourceData.verifikator);
+        // Add verifikator data if exists
+        if (seedSource.verifikator) {
+            const verifikatorData = {
+                id: seedSource.verifikator.id,
+                name: seedSource.verifikator.name,
+                email: seedSource.verifikator.email
+            };
+            seedSourceData.verifikator = this.decryptUserData(verifikatorData);
         }
 
-        return seedSourceData as SeedSource;
+        return seedSourceData;
     }
 
-    async getSeedSourcesByPemohon(pemohonId: string): Promise<SeedSource[]> {
+    async getSeedSourcesByPemohon(pemohonId: string): Promise<any[]> {
         const seedSources = await this.seedSourceRepository.findByPemohonId(pemohonId);
 
-        // Decrypt sensitive data for each seed source
-        const decryptedSeedSources = await Promise.all(seedSources.map(async (seedSource: any) => {
-            const seedSourceData = seedSource.toJSON();
+        // Properly serialize and decrypt sensitive data for each seed source
+        const decryptedSeedSources = seedSources.map((seedSource: any) => {
+            const seedSourceData: any = {
+                id: seedSource.id,
+                pemohon_id: seedSource.pemohon_id,
+                nomor_penetapan: seedSource.nomor_penetapan,
+                tanggal_penetapan: seedSource.tanggal_penetapan,
+                file_penetapan_sumber_benih: seedSource.file_penetapan_sumber_benih,
+                status: seedSource.status,
+                status_label: seedSource.getStatusLabel(),
+                verifikator_id: seedSource.verifikator_id,
+                catatan_verifikasi: seedSource.catatan_verifikasi,
+                tanggal_verifikasi: seedSource.tanggal_verifikasi,
+                created_at: seedSource.created_at,
+                updated_at: seedSource.updated_at
+            };
 
-            // Decrypt verifikator data if exists
-            if (seedSourceData.verifikator) {
-                seedSourceData.verifikator = this.decryptUserData(seedSourceData.verifikator);
+            // Add verifikator data if exists
+            if (seedSource.verifikator) {
+                const verifikatorData = {
+                    id: seedSource.verifikator.id,
+                    name: seedSource.verifikator.name,
+                    email: seedSource.verifikator.email
+                };
+                seedSourceData.verifikator = this.decryptUserData(verifikatorData);
             }
 
             return seedSourceData;
-        }));
+        });
 
-        return decryptedSeedSources as SeedSource[];
+        return decryptedSeedSources;
     }
 
     async verifySeedSource(
@@ -165,27 +269,64 @@ export class SeedSourceService {
         return null;
     }
 
-    async getPendingVerifications(): Promise<SeedSource[]> {
+    async getPendingVerifications(): Promise<any[]> {
         const seedSources = await this.seedSourceRepository.findPendingVerification();
 
-        // Decrypt sensitive data for each seed source
-        const decryptedSeedSources = await Promise.all(seedSources.map(async (seedSource: any) => {
-            const seedSourceData = seedSource.toJSON();
+        // Properly serialize and decrypt sensitive data for each seed source
+        const decryptedSeedSources = seedSources.map((seedSource: any) => {
+            const seedSourceData: any = {
+                id: seedSource.id,
+                pemohon_id: seedSource.pemohon_id,
+                nomor_penetapan: seedSource.nomor_penetapan,
+                tanggal_penetapan: seedSource.tanggal_penetapan,
+                file_penetapan_sumber_benih: seedSource.file_penetapan_sumber_benih,
+                status: seedSource.status,
+                status_label: seedSource.getStatusLabel(),
+                verifikator_id: seedSource.verifikator_id,
+                catatan_verifikasi: seedSource.catatan_verifikasi,
+                tanggal_verifikasi: seedSource.tanggal_verifikasi,
+                created_at: seedSource.created_at,
+                updated_at: seedSource.updated_at
+            };
 
-            // Decrypt pemohon data
-            if (seedSourceData.pemohon) {
-                seedSourceData.pemohon = this.decryptProfileData(seedSourceData.pemohon);
+            // Add pemohon data if exists
+            if (seedSource.pemohon) {
+                const pemohonData = {
+                    id: seedSource.pemohon.id,
+                    userId: seedSource.pemohon.userId,
+                    nik: seedSource.pemohon.nik,
+                    npwp: seedSource.pemohon.npwp,
+                    email: seedSource.pemohon.email,
+                    namaPemohon: seedSource.pemohon.namaPemohon,
+                    telepon: seedSource.pemohon.telepon,
+                    alamatPemohon: seedSource.pemohon.alamatPemohon,
+                    alamatPerusahaan: seedSource.pemohon.alamatPerusahaan,
+                    nikKuasa: seedSource.pemohon.nikKuasa,
+                    namaKuasa: seedSource.pemohon.namaKuasa
+                };
 
-                // Decrypt user data in pemohon if exists
-                if (seedSourceData.pemohon.user) {
-                    seedSourceData.pemohon.user = this.decryptUserData(seedSourceData.pemohon.user);
+                // Decrypt pemohon data
+                seedSourceData.pemohon = this.decryptProfileData(pemohonData);
+
+                // Add user data if exists
+                if (seedSource.pemohon.user) {
+                    const userData = {
+                        id: seedSource.pemohon.user.id,
+                        name: seedSource.pemohon.user.name,
+                        email: seedSource.pemohon.user.email,
+                        role: seedSource.pemohon.user.role ? {
+                            id: seedSource.pemohon.user.role.id,
+                            roleName: seedSource.pemohon.user.role.roleName
+                        } : null
+                    };
+                    seedSourceData.pemohon.user = this.decryptUserData(userData);
                 }
             }
 
             return seedSourceData;
-        }));
+        });
 
-        return decryptedSeedSources as SeedSource[];
+        return decryptedSeedSources;
     }
 
     async updateSeedSource(
