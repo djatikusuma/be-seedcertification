@@ -255,7 +255,7 @@ export class RecommendationService extends BaseService<Recommendation> {
 
         return await this.recommendationRepository.create({
             pemohon_id: data.pemohon_id,
-            seedsource_id: data.seedsource_id,
+            seedsource_id: data.seedsource_id || undefined,
             pemodalan: data.pemodalan,
             tenaga_kerja_sd: data.tenaga_kerja_sd || 0,
             tenaga_kerja_smp: data.tenaga_kerja_smp || 0,

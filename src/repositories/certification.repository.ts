@@ -7,6 +7,7 @@ import { Commodity } from '../models/Commodity.model';
 import { User } from '../models/User.model';
 import { Role } from '../models/Role.model';
 import { Op, WhereOptions, Includeable, Sequelize } from 'sequelize';
+import { DatabaseUtil } from '../utils/database.util';
 
 export interface CertificationFilterOptions {
     status?: number;
@@ -43,19 +44,12 @@ export class CertificationRepository extends BaseRepository<Certification> {
         }
 
         if (filters.pemeriksa_contains) {
-            // Create a raw where condition for JSON_CONTAINS
-            // (where as any)['id'] = {
-            //     [Op.and]: [
-            //         where.id || {},
-            //         Sequelize.literal(`JSON_CONTAINS(pemeriksa, '"${filters.pemeriksa_contains}"')`)
-            //     ]
-            // };
-            // Search for inspector ID in JSON array using JSON_CONTAINS
-            console.log('Filtering recommendations by pemeriksa_contains:', filters.pemeriksa_contains);
+            // Search for inspector ID in JSON array using database-specific query
+            console.log('Filtering certifications by pemeriksa_contains:', filters.pemeriksa_contains);
 
-            (where as any)[Op.and] = Sequelize.literal(`JSON_CONTAINS(certification.pemeriksa, '"${filters.pemeriksa_contains}"')`);
+            (where as any)[Op.and] = DatabaseUtil.getJsonContainsQuery('certification.pemeriksa', filters.pemeriksa_contains);
 
-            console.log('Using JSON_CONTAINS query for pemeriksa');
+            console.log('Using database-specific JSON contains query for pemeriksa');
         }
 
         if (filters.search) {

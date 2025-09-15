@@ -20,28 +20,28 @@ interface Config {
 
 const config: Config = {
     development: {
-        username: process.env.DB_USER || 'root',
+        username: process.env.DB_USER || 'postgres',
         password: process.env.DB_PASSWORD || 'password',
         database: process.env.DB_NAME || 'express_db',
         host: process.env.DB_HOST || 'localhost',
-        port: parseInt(process.env.DB_PORT || '3306'),
-        dialect: (process.env.DB_DIALECT as Dialect) || 'mysql',
+        port: parseInt(process.env.DB_PORT || '5432'),
+        dialect: (process.env.DB_DIALECT as Dialect) || 'postgres',
     },
     test: {
-        username: process.env.DB_USER || 'root',
+        username: process.env.DB_USER || 'postgres',
         password: process.env.DB_PASSWORD || 'password',
         database: process.env.DB_NAME || 'express_test_db',
         host: process.env.DB_HOST || 'localhost',
-        port: parseInt(process.env.DB_PORT || '3306'),
-        dialect: (process.env.DB_DIALECT as Dialect) || 'mysql',
+        port: parseInt(process.env.DB_PORT || '5432'),
+        dialect: (process.env.DB_DIALECT as Dialect) || 'postgres',
     },
     production: {
-        username: process.env.DB_USER || 'root',
+        username: process.env.DB_USER || 'postgres',
         password: process.env.DB_PASSWORD || 'password',
         database: process.env.DB_NAME || 'express_prod_db',
         host: process.env.DB_HOST || 'localhost',
-        port: parseInt(process.env.DB_PORT || '3306'),
-        dialect: (process.env.DB_DIALECT as Dialect) || 'mysql',
+        port: parseInt(process.env.DB_PORT || '5432'),
+        dialect: (process.env.DB_DIALECT as Dialect) || 'postgres',
     },
 };
 
